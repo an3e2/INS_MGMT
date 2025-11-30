@@ -1,0 +1,237 @@
+
+import React, { useState, useEffect } from 'react';
+import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import Sidebar from './components/Sidebar';
+import Dashboard from './components/Dashboard';
+import PlayerList from './components/PlayerList';
+import MatchSchedule from './components/MatchSchedule';
+import AICoach from './components/AICoach';
+import MatchSelection from './components/MatchSelection';
+import FieldingMap from './components/FieldingMap';
+import OpponentTeams from './components/OpponentTeams';
+import Scorecard from './components/Scorecard';
+import SplashScreen from './components/SplashScreen';
+import { Player, Match, UserRole, OpponentTeam } from './types';
+import { getPlayers, savePlayers, getMatches, saveMatches, getOpponents, saveOpponents } from './services/storageService';
+import { Menu, BrainCircuit } from 'lucide-react';
+
+const AppContent: React.FC<{ 
+  players: Player[], 
+  matches: Match[], 
+  opponents: OpponentTeam[],
+  userRole: UserRole,
+  onAddPlayer: (p: Player) => void, 
+  onUpdatePlayer: (p: Player) => void,
+  onDeletePlayer: (id: string) => void,
+  onAddOpponent: (t: OpponentTeam) => void,
+  onUpdateOpponent: (t: OpponentTeam) => void,
+  onDeleteOpponent: (id: string) => void,
+  onAddMatch: (m: Match) => void,
+  onSignOut: () => void
+}> = ({ players, matches, opponents, userRole, onAddPlayer, onUpdatePlayer, onDeletePlayer, onAddOpponent, onUpdateOpponent, onDeleteOpponent, onAddMatch, onSignOut }) => {
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [showAICoach, setShowAICoach] = useState(false);
+  const location = useLocation();
+
+  return (
+    <div className="flex min-h-screen bg-slate-50 text-slate-900 font-sans overflow-hidden">
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        toggle={() => setSidebarOpen(!isSidebarOpen)} 
+        userRole={userRole} 
+        onSignOut={onSignOut}
+      />
+      
+      <main className="flex-1 min-w-0 transition-all duration-300 relative h-screen overflow-y-auto">
+        <header className="md:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-10">
+          <h1 className="font-bold text-lg text-slate-800">Indian Strikers</h1>
+          <button onClick={() => setSidebarOpen(true)} className="text-slate-600">
+            <Menu />
+          </button>
+        </header>
+
+        <div className="p-4 md:p-8 max-w-7xl mx-auto pb-24">
+          <Routes>
+            <Route path="/match-day" element={<Dashboard players={players} matches={matches} />} />
+            <Route 
+              path="/roster" 
+              element={
+                <PlayerList 
+                  players={players} 
+                  userRole={userRole}
+                  onAddPlayer={onAddPlayer} 
+                  onUpdatePlayer={onUpdatePlayer}
+                  onDeletePlayer={onDeletePlayer}
+                />
+              } 
+            />
+            <Route 
+              path="/matches" 
+              element={
+                <MatchSchedule 
+                  matches={matches} 
+                  opponents={opponents}
+                  onAddMatch={onAddMatch}
+                  userRole={userRole}
+                />
+              } 
+            />
+            <Route path="/selection" element={<MatchSelection players={players} userRole={userRole} />} />
+            <Route path="/fielding" element={<FieldingMap />} />
+            <Route 
+              path="/opponents" 
+              element={
+                <OpponentTeams 
+                  teams={opponents} 
+                  onAddTeam={onAddOpponent} 
+                  onUpdateTeam={onUpdateOpponent}
+                  onDeleteTeam={onDeleteOpponent}
+                  userRole={userRole}
+                />
+              } 
+            />
+            <Route path="/scorecard" element={<Scorecard />} />
+            <Route path="*" element={<Navigate to="/match-day" replace />} />
+          </Routes>
+        </div>
+
+        {/* AI Coach FAB */}
+        <div className="fixed bottom-6 right-6 z-40">
+           <button 
+             onClick={() => setShowAICoach(!showAICoach)}
+             className="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg shadow-blue-600/30 transition-all hover:scale-110 flex items-center justify-center"
+           >
+             <BrainCircuit size={24} />
+           </button>
+        </div>
+
+        {/* AI Coach Overlay Modal */}
+        {showAICoach && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+             <div className="w-full max-w-2xl bg-white rounded-2xl overflow-hidden shadow-2xl h-[80vh] relative flex flex-col">
+                <button 
+                  onClick={() => setShowAICoach(false)}
+                  className="absolute top-4 right-4 text-white hover:text-red-200 z-10"
+                >
+                  <div className="bg-white/20 p-1 rounded-full"><Menu size={20} className="rotate-45" /></div>
+                </button>
+                <AICoach players={players} matches={matches} />
+             </div>
+          </div>
+        )}
+      </main>
+    </div>
+  );
+};
+
+const App: React.FC = () => {
+  const [players, setPlayers] = useState<Player[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [opponents, setOpponents] = useState<OpponentTeam[]>([]);
+  const [showSplash, setShowSplash] = useState(true);
+  const [userRole, setUserRole] = useState<UserRole>('guest');
+
+  useEffect(() => {
+    // Load initial data
+    setPlayers(getPlayers());
+    setMatches(getMatches());
+    setOpponents(getOpponents());
+    
+    // Check if splash has been seen this session
+    const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
+    if (hasSeenSplash) { 
+      // Recover session role if exists, default to guest if not
+      const savedRole = sessionStorage.getItem('userRole') as UserRole;
+      if (savedRole) setUserRole(savedRole);
+      setShowSplash(false); 
+    }
+  }, []);
+
+  const handleLoginComplete = (role: UserRole) => {
+    setUserRole(role);
+    setShowSplash(false);
+    sessionStorage.setItem('hasSeenSplash', 'true');
+    sessionStorage.setItem('userRole', role);
+  };
+
+  const handleSignOut = () => {
+    setUserRole('guest');
+    setShowSplash(true);
+    sessionStorage.removeItem('hasSeenSplash');
+    sessionStorage.removeItem('userRole');
+  };
+
+  const handleAddPlayer = (player: Player) => {
+    if (userRole !== 'admin') return;
+    const updated = [player, ...players];
+    setPlayers(updated);
+    savePlayers(updated);
+  };
+
+  const handleUpdatePlayer = (updatedPlayer: Player) => {
+    if (userRole !== 'admin') return;
+    const updated = players.map(p => p.id === updatedPlayer.id ? updatedPlayer : p);
+    setPlayers(updated);
+    savePlayers(updated);
+  };
+
+  const handleDeletePlayer = (id: string) => {
+    if (userRole !== 'admin') return;
+    const updated = players.filter(p => p.id !== id);
+    setPlayers(updated);
+    savePlayers(updated);
+  };
+
+  const handleAddOpponent = (team: OpponentTeam) => {
+    if (userRole !== 'admin') return;
+    const updated = [...opponents, team];
+    setOpponents(updated);
+    saveOpponents(updated);
+  };
+
+  const handleUpdateOpponent = (updatedTeam: OpponentTeam) => {
+    if (userRole !== 'admin') return;
+    const updated = opponents.map(t => t.id === updatedTeam.id ? updatedTeam : t);
+    setOpponents(updated);
+    saveOpponents(updated);
+  };
+
+  const handleDeleteOpponent = (id: string) => {
+    if (userRole !== 'admin') return;
+    const updated = opponents.filter(t => t.id !== id);
+    setOpponents(updated);
+    saveOpponents(updated);
+  };
+
+  const handleAddMatch = (match: Match) => {
+    if (userRole !== 'admin') return;
+    const updated = [...matches, match];
+    setMatches(updated);
+    saveMatches(updated);
+  };
+
+  if (showSplash) {
+    return <SplashScreen onComplete={handleLoginComplete} />;
+  }
+
+  return (
+    <HashRouter>
+      <AppContent 
+        players={players} 
+        matches={matches} 
+        opponents={opponents}
+        userRole={userRole}
+        onAddPlayer={handleAddPlayer} 
+        onUpdatePlayer={handleUpdatePlayer}
+        onDeletePlayer={handleDeletePlayer}
+        onAddOpponent={handleAddOpponent}
+        onUpdateOpponent={handleUpdateOpponent}
+        onDeleteOpponent={handleDeleteOpponent}
+        onAddMatch={handleAddMatch}
+        onSignOut={handleSignOut}
+      />
+    </HashRouter>
+  );
+};
+
+export default App;
