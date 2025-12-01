@@ -5,15 +5,17 @@ import { UserRole } from '../types';
 
 interface SplashScreenProps {
   onComplete: (role: UserRole) => void;
+  teamLogo?: string;
 }
 
-const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
+const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, teamLogo = 'logo.png' }) => {
   // 0: Init, 1: Logo Reveal, 2: Text Reveal, 3: Buttons Reveal, 4: Auth Mode
   const [animationStep, setAnimationStep] = useState(0);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
     // Cinematic Sequence
@@ -87,13 +89,19 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
         `}>
           <div className="relative">
             {/* Logo Crest */}
-            <div className="w-32 h-32 md:w-40 md:h-40 bg-gradient-to-tr from-orange-500 to-yellow-500 rounded-2xl rotate-45 shadow-[0_0_50px_rgba(249,115,22,0.5)] flex items-center justify-center border-4 border-white/10 mb-8">
-              <div className="w-full h-full border-4 border-slate-900/30 rounded-2xl absolute inset-0"></div>
-              <div className="-rotate-45 flex flex-col items-center justify-center">
-                <Trophy size={48} className="text-slate-900 mb-1" />
-                <span className="text-3xl font-black text-slate-900 tracking-tighter leading-none">IS</span>
-                <span className="text-[10px] font-bold text-slate-800 uppercase tracking-widest mt-1">EST 2024</span>
-              </div>
+            <div className="w-32 h-32 md:w-40 md:h-40 bg-transparent rounded-2xl flex items-center justify-center mb-8 transform hover:scale-105 transition-transform duration-500 animate-zoom-in">
+              {!imgError ? (
+                <img 
+                  src={teamLogo} 
+                  alt="Indian Strikers Logo" 
+                  className="w-full h-full object-contain drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]"
+                  onError={() => setImgError(true)}
+                />
+              ) : (
+                <div className="w-full h-full bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.5)]">
+                   <Shield size={80} className="text-white" />
+                </div>
+              )}
             </div>
           </div>
 

@@ -5,6 +5,7 @@ const PLAYERS_KEY = 'indian_strikers_players';
 const MATCHES_KEY = 'indian_strikers_matches';
 const OPPONENTS_KEY = 'indian_strikers_opponents';
 const STRATEGIES_KEY = 'indian_strikers_strategies';
+const TEAM_LOGO_KEY = 'indian_strikers_logo';
 
 const SEED_PLAYERS: Player[] = [
   {
@@ -219,78 +220,53 @@ const SEED_PLAYERS: Player[] = [
   }
 ];
 
-const SEED_MATCHES: Match[] = [
-  {
-    id: 'm1',
-    opponent: 'Australia',
-    date: '2023-11-19',
-    venue: 'RCA-1',
-    result: 'Lost',
-    scoreFor: '240/10',
-    scoreAgainst: '241/4',
-    isUpcoming: false,
-    tournament: 'World Cup',
-    tossTime: '13:30'
-  },
-  {
-    id: 'm2',
-    opponent: 'South Africa',
-    date: '2024-01-15',
-    venue: 'RCA-5',
-    result: 'Won',
-    scoreFor: '320/5',
-    scoreAgainst: '210/10',
-    isUpcoming: false,
-    tournament: 'Freedom Series',
-    tossTime: '14:00'
-  },
-  {
-    id: 'm3',
-    opponent: 'England',
-    date: '2024-06-20',
-    venue: 'RCA-12',
-    isUpcoming: true,
-    tournament: 'Summer Bash',
-    tossTime: '10:00'
-  },
-  {
-    id: 'm4',
-    opponent: 'Pakistan',
-    date: '2024-07-05',
-    venue: 'RCA-3',
-    isUpcoming: true,
-    tournament: 'Champions Trophy',
-    tossTime: '18:30'
-  }
-];
+const SEED_MATCHES: Match[] = [];
 
 const SEED_OPPONENTS: OpponentTeam[] = [
   { 
     id: '1', 
-    name: 'Australia', 
+    name: 'ATSS CC', 
     rank: 1, 
-    strength: 'Pace Bowling', 
-    weakness: 'Spin', 
-    players: [{id: '1', name: 'Pat Cummins'}, {id: '2', name: 'David Warner'}],
-    color: 'bg-yellow-400' 
-  },
-  { 
-    id: '2', 
-    name: 'England', 
-    rank: 3, 
-    strength: 'Batting Depth', 
-    weakness: 'Death Bowling', 
-    players: [{id: '1', name: 'Jos Buttler'}, {id: '2', name: 'Joe Root'}],
+    strength: 'Unknown', 
+    weakness: 'Unknown', 
+    players: [],
     color: 'bg-blue-600' 
   },
   { 
-    id: '3', 
-    name: 'South Africa', 
-    rank: 4, 
-    strength: 'Fielding', 
-    weakness: 'Chasing', 
-    players: [{id: '1', name: 'Kagiso Rabada'}],
+    id: '2', 
+    name: 'Battagram Shaheen', 
+    rank: 2, 
+    strength: 'Unknown', 
+    weakness: 'Unknown', 
+    players: [],
     color: 'bg-green-600' 
+  },
+  { 
+    id: '3', 
+    name: 'Jillah Stars', 
+    rank: 3, 
+    strength: 'Unknown', 
+    weakness: 'Unknown', 
+    players: [],
+    color: 'bg-yellow-500' 
+  },
+  { 
+    id: '4', 
+    name: 'Royal CC', 
+    rank: 4, 
+    strength: 'Unknown', 
+    weakness: 'Unknown', 
+    players: [],
+    color: 'bg-purple-600' 
+  },
+  { 
+    id: '5', 
+    name: 'Yaran CC', 
+    rank: 5, 
+    strength: 'Unknown', 
+    weakness: 'Unknown', 
+    players: [],
+    color: 'bg-red-600' 
   },
 ];
 
@@ -359,4 +335,12 @@ export const getStrategies = (): FieldingStrategy[] => {
 
 export const saveStrategies = (strategies: FieldingStrategy[]) => {
   localStorage.setItem(STRATEGIES_KEY, JSON.stringify(strategies));
+};
+
+export const getTeamLogo = (): string => {
+  return localStorage.getItem(TEAM_LOGO_KEY) || 'logo.png';
+};
+
+export const saveTeamLogo = (url: string) => {
+  localStorage.setItem(TEAM_LOGO_KEY, url);
 };

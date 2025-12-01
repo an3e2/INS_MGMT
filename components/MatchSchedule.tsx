@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Match, OpponentTeam, UserRole } from '../types';
-import { Calendar, MapPin, Trophy, Clock, Plus, ChevronDown, ChevronUp, ArrowRight } from 'lucide-react';
+import { Calendar, MapPin, Trophy, Clock, Plus, ChevronDown, ChevronUp, ArrowRight, Search, Handshake } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface MatchScheduleProps {
@@ -14,6 +14,7 @@ interface MatchScheduleProps {
 const MatchSchedule: React.FC<MatchScheduleProps> = ({ matches, opponents, onAddMatch, userRole }) => {
   const navigate = useNavigate();
   const [showForm, setShowForm] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     tournament: '',
     opponent: '',
@@ -23,8 +24,15 @@ const MatchSchedule: React.FC<MatchScheduleProps> = ({ matches, opponents, onAdd
   });
 
   const canEdit = userRole === 'admin';
-  const upcoming = matches.filter(m => m.isUpcoming).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-  const past = matches.filter(m => !m.isUpcoming).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  // Filter matches based on search term
+  const filteredMatches = matches.filter(m => 
+    m.opponent.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (m.tournament && m.tournament.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
+
+  const upcoming = filteredMatches.filter(m => m.isUpcoming).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  const past = filteredMatches.filter(m => !m.isUpcoming).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   // Ground options RCA-1 to RCA-15
   const groundOptions = Array.from({ length: 15 }, (_, i) => `RCA-${i + 1}`);
@@ -58,11 +66,23 @@ const MatchSchedule: React.FC<MatchScheduleProps> = ({ matches, opponents, onAdd
     }
   };
 
+  const MatchTypeBadge = ({ tournament }: { tournament?: string }) => {
+    const isFriendly = !tournament || tournament.toLowerCase().includes('friendly');
+    return (
+      <span className={`text-xs font-bold px-2 py-1 rounded mb-2 inline-flex items-center gap-1.5
+        ${!isFriendly ? 'bg-purple-100 text-purple-700 border border-purple-200' : 'bg-blue-50 text-blue-600 border border-blue-100'}
+      `}>
+        {!isFriendly ? <Trophy size={12} className="fill-purple-200" /> : <Handshake size={12} />}
+        {tournament || 'Friendly Match'}
+      </span>
+    );
+  };
+
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Match Schedule</h2>
+          <h2 className="text-2xl font-bold text-slate-800">Matches</h2>
           <p className="text-slate-500">Upcoming fixtures and past results</p>
         </div>
         {canEdit && (
@@ -74,6 +94,18 @@ const MatchSchedule: React.FC<MatchScheduleProps> = ({ matches, opponents, onAdd
             {showForm ? 'Cancel' : 'Schedule Match'}
           </button>
         )}
+      </div>
+
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+        <input 
+          type="text"
+          placeholder="Search matches by opponent, tournament..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700 shadow-sm transition-all"
+        />
       </div>
 
       {/* Schedule Match Form */}
@@ -167,16 +199,14 @@ const MatchSchedule: React.FC<MatchScheduleProps> = ({ matches, opponents, onAdd
           </h3>
           {upcoming.length === 0 ? (
             <div className="bg-white p-8 rounded-xl border border-slate-100 text-center text-slate-400">
-              No upcoming matches scheduled.
+              {searchTerm ? 'No matches found.' : 'No upcoming matches scheduled.'}
             </div>
           ) : (
             upcoming.map(match => (
               <div key={match.id} className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm border-l-4 border-l-blue-500 hover:shadow-md transition-shadow group">
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded mb-2 inline-block">
-                      {match.tournament || 'Friendly'}
-                    </span>
+                    <MatchTypeBadge tournament={match.tournament} />
                     <h4 className="text-xl font-bold text-slate-800">{match.opponent}</h4>
                     <div className="flex items-center gap-4 text-slate-500 text-sm mt-1">
                       <span className="flex items-center gap-1"><MapPin size={14} /> {match.venue}</span>
@@ -208,39 +238,46 @@ const MatchSchedule: React.FC<MatchScheduleProps> = ({ matches, opponents, onAdd
             <Trophy className="text-yellow-500" size={20} />
             Recent Results
           </h3>
-          {past.map(match => (
-            <div key={match.id} className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm opacity-80 hover:opacity-100 transition-opacity">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-slate-400 text-sm">{new Date(match.date).toLocaleDateString()}</span>
-                <span className={`
-                  px-3 py-1 rounded-full text-xs font-bold uppercase
-                  ${match.result === 'Won' ? 'bg-green-100 text-green-700' : 
-                    match.result === 'Lost' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}
-                `}>
-                  {match.result}
-                </span>
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="text-center">
-                  <p className="text-xs text-slate-400 uppercase font-bold">Strikers</p>
-                  <p className="text-lg font-bold text-slate-800">{match.scoreFor}</p>
-                </div>
-                <div className="text-slate-300 font-bold">VS</div>
-                <div className="text-center">
-                  <p className="text-xs text-slate-400 uppercase font-bold">{match.opponent}</p>
-                  <p className="text-lg font-bold text-slate-800">{match.scoreAgainst}</p>
-                </div>
-              </div>
-              <div className="mt-4 pt-4 border-t border-slate-50 text-center">
-                 <button 
-                    onClick={() => navigate('/scorecard')}
-                    className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors"
-                  >
-                    View Full Scorecard
-                  </button>
-              </div>
+          {past.length === 0 ? (
+            <div className="bg-white p-8 rounded-xl border border-slate-100 text-center text-slate-400">
+              {searchTerm ? 'No matches found.' : 'No past matches recorded.'}
             </div>
-          ))}
+          ) : (
+             past.map(match => (
+              <div key={match.id} className="bg-white p-6 rounded-xl border border-slate-100 shadow-sm opacity-90 hover:opacity-100 transition-opacity">
+                <div className="flex justify-between items-center mb-3">
+                  <MatchTypeBadge tournament={match.tournament} />
+                  <span className={`
+                    px-3 py-1 rounded-full text-xs font-bold uppercase
+                    ${match.result === 'Won' ? 'bg-green-100 text-green-700' : 
+                      match.result === 'Lost' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'}
+                  `}>
+                    {match.result}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center px-2">
+                  <div className="text-center">
+                    <p className="text-xs text-slate-400 uppercase font-bold">Strikers</p>
+                    <p className="text-lg font-bold text-slate-800">{match.scoreFor}</p>
+                  </div>
+                  <div className="text-slate-300 font-bold text-xs">VS</div>
+                  <div className="text-center">
+                    <p className="text-xs text-slate-400 uppercase font-bold">{match.opponent}</p>
+                    <p className="text-lg font-bold text-slate-800">{match.scoreAgainst}</p>
+                  </div>
+                </div>
+                <div className="mt-4 pt-4 border-t border-slate-50 flex justify-between items-center">
+                   <span className="text-slate-400 text-xs">{new Date(match.date).toLocaleDateString()}</span>
+                   <button 
+                      onClick={() => navigate('/scorecard')}
+                      className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1"
+                    >
+                      Scorecard <ArrowRight size={10} />
+                    </button>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

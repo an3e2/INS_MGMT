@@ -1,11 +1,14 @@
 
-import React, { useState } from 'react';
-import { Player, PlayerRole, UserRole } from '../types';
-import { Trophy, AlertTriangle, Lock, ArrowRight, ArrowLeft } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Player, PlayerRole, UserRole, Match } from '../types';
+import { Trophy, AlertTriangle, Lock, ArrowRight, ArrowLeft, Share2, Loader2, Calendar, MapPin, Sword, Shield, CircleDot } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import { getTeamLogo } from '../services/storageService';
 
 interface MatchSelectionProps {
   players: Player[];
   userRole: UserRole;
+  matches: Match[];
 }
 
 interface PlayerCardProps {
@@ -49,9 +52,19 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ player, isSelected, onToggle, c
   </div>
 );
 
-const MatchSelection: React.FC<MatchSelectionProps> = ({ players, userRole }) => {
+const MatchSelection: React.FC<MatchSelectionProps> = ({ players, userRole, matches }) => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [imgError, setImgError] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  
   const canEdit = userRole === 'admin';
+  const teamLogo = getTeamLogo();
+
+  // Find next match
+  const nextMatch = matches
+    .filter(m => m.isUpcoming)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
 
   const toggleSelection = (id: string) => {
     if (!canEdit) return;
@@ -75,8 +88,43 @@ const MatchSelection: React.FC<MatchSelectionProps> = ({ players, userRole }) =>
   const allRounders = selectedPlayers.filter(p => p.role === PlayerRole.ALL_ROUNDER).length;
   const keepers = selectedPlayers.filter(p => p.role === PlayerRole.WICKET_KEEPER).length;
 
+  const handleGenerateImage = async () => {
+    if (!cardRef.current || selectedIds.size === 0) return;
+    setIsGenerating(true);
+    try {
+        // Wait a tick to ensure rendering
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const canvas = await html2canvas(cardRef.current, {
+            backgroundColor: null,
+            scale: 2, // High resolution
+            useCORS: true,
+            logging: false,
+        });
+        
+        const link = document.createElement('a');
+        link.download = `IndianStrikers_XI_${new Date().toISOString().split('T')[0]}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+    } catch (err) {
+        console.error("Image generation failed", err);
+        alert("Could not generate image. Please try again.");
+    } finally {
+        setIsGenerating(false);
+    }
+  };
+
+  const getRoleIcon = (role: string) => {
+      switch(role) {
+          case PlayerRole.BATSMAN: return <Sword size={14} />;
+          case PlayerRole.BOWLER: return <CircleDot size={14} />;
+          case PlayerRole.WICKET_KEEPER: return <Shield size={14} />;
+          default: return <Trophy size={14} />;
+      }
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Match Selection</h2>
@@ -84,16 +132,19 @@ const MatchSelection: React.FC<MatchSelectionProps> = ({ players, userRole }) =>
             {canEdit ? 'Click players to move them between squad and playing XI' : 'Confirmed Team Sheet'}
           </p>
         </div>
-        <div className="flex items-center gap-4 bg-white p-2 pr-6 rounded-xl shadow-sm border border-slate-100">
-           <div className={`
-             w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl
-             ${selectedIds.size === 11 ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}
-           `}>
-             {selectedIds.size}
-           </div>
-           <div>
-             <p className="text-xs text-slate-400 uppercase font-bold">Selected</p>
-             <p className="text-sm font-medium text-slate-700">Target: 11</p>
+        <div className="flex items-center gap-4">
+           {/* Stats Badge */}
+           <div className="flex items-center gap-4 bg-white p-2 pr-6 rounded-xl shadow-sm border border-slate-100">
+              <div className={`
+                w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl
+                ${selectedIds.size === 11 ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}
+              `}>
+                {selectedIds.size}
+              </div>
+              <div>
+                <p className="text-xs text-slate-400 uppercase font-bold">Selected</p>
+                <p className="text-sm font-medium text-slate-700">Target: 11</p>
+              </div>
            </div>
         </div>
       </div>
@@ -189,6 +240,15 @@ const MatchSelection: React.FC<MatchSelectionProps> = ({ players, userRole }) =>
               >
                 {canEdit ? 'Lock Team Sheet' : <><Lock size={16} /> Locked by Admin</>}
               </button>
+              
+              <button 
+                onClick={handleGenerateImage}
+                disabled={selectedIds.size === 0 || isGenerating}
+                className="w-full py-3 bg-indigo-900 text-white rounded-xl font-bold hover:bg-black transition-colors flex items-center justify-center gap-2 shadow-xl"
+              >
+                 {isGenerating ? <Loader2 size={18} className="animate-spin" /> : <Share2 size={18} />}
+                 Share Squad Image
+              </button>
         </div>
 
         {/* Right Column: Playing XI */}
@@ -217,7 +277,7 @@ const MatchSelection: React.FC<MatchSelectionProps> = ({ players, userRole }) =>
         </div>
         
         {/* Mobile Stats Panel (Shown only on small screens) */}
-         <div className="lg:hidden col-span-full">
+         <div className="lg:hidden col-span-full space-y-3">
             <button 
                 disabled={selectedIds.size !== 11 || !canEdit}
                 className={`w-full py-3 rounded-xl font-bold transition-all
@@ -229,7 +289,102 @@ const MatchSelection: React.FC<MatchSelectionProps> = ({ players, userRole }) =>
               >
                 {selectedIds.size !== 11 ? `Select ${11 - selectedIds.size} more` : 'Lock Team Sheet'}
               </button>
+              
+              <button 
+                onClick={handleGenerateImage}
+                disabled={selectedIds.size === 0 || isGenerating}
+                className="w-full py-3 bg-indigo-900 text-white rounded-xl font-bold hover:bg-black transition-colors flex items-center justify-center gap-2"
+              >
+                 {isGenerating ? <Loader2 size={18} className="animate-spin" /> : <Share2 size={18} />}
+                 Share Squad
+              </button>
          </div>
+      </div>
+
+      {/* Hidden Social Media Card - Positioned off-screen but rendered for Capture */}
+      <div className="absolute left-[-9999px] top-0">
+          <div ref={cardRef} className="w-[800px] h-[800px] bg-slate-900 text-white relative overflow-hidden flex flex-col font-sans">
+              {/* Dynamic Background */}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-900 via-slate-900 to-black z-0"></div>
+              <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
+              <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2"></div>
+              <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-orange-500/10 rounded-full blur-[80px] translate-y-1/2 -translate-x-1/2"></div>
+              
+              {/* Header: Match Info */}
+              <div className="relative z-10 p-8 flex justify-between items-start border-b border-white/10 bg-black/20 backdrop-blur-sm">
+                  <div className="flex items-center gap-4">
+                      <div className="w-20 h-20 bg-white/10 rounded-xl p-2 flex items-center justify-center backdrop-blur-md border border-white/20">
+                          {!imgError ? (
+                            <img 
+                              src={teamLogo} 
+                              alt="Logo" 
+                              className="w-full h-full object-contain drop-shadow-lg" 
+                              onError={() => setImgError(true)}
+                              crossOrigin="anonymous"
+                            />
+                          ) : (
+                            <Shield className="w-16 h-16 text-blue-400" />
+                          )}
+                      </div>
+                      <div>
+                          <h2 className="text-3xl font-black italic tracking-tighter uppercase text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-200">
+                             Match Day Squad
+                          </h2>
+                          <div className="flex items-center gap-4 mt-2 text-blue-200 font-medium">
+                              {nextMatch ? (
+                                  <>
+                                    <span className="flex items-center gap-1.5"><Sword size={18}/> vs {nextMatch.opponent}</span>
+                                    <span className="flex items-center gap-1.5"><Calendar size={18}/> {new Date(nextMatch.date).toLocaleDateString()}</span>
+                                  </>
+                              ) : (
+                                  <span>Next Match TBD</span>
+                              )}
+                          </div>
+                      </div>
+                  </div>
+                  {nextMatch && (
+                     <div className="text-right">
+                         <div className="bg-white/10 px-4 py-2 rounded-lg border border-white/10 inline-flex items-center gap-2 text-sm font-bold tracking-wide">
+                             <MapPin size={16} className="text-orange-400" /> {nextMatch.venue}
+                         </div>
+                     </div>
+                  )}
+              </div>
+
+              {/* Main Content: Player Grid */}
+              <div className="relative z-10 flex-1 p-8">
+                 <div className="grid grid-cols-2 gap-4 h-full content-center">
+                    {selectedPlayers.map((p, idx) => (
+                       <div key={p.id} className="flex items-center gap-4 bg-white/5 p-3 rounded-xl border border-white/5 shadow-sm">
+                           <div className="relative">
+                               <img 
+                                 src={p.avatarUrl} 
+                                 className="w-14 h-14 rounded-full border-2 border-white/30 object-cover" 
+                                 crossOrigin="anonymous" 
+                               />
+                               <div className="absolute -bottom-1 -right-1 bg-slate-800 text-[10px] p-1 rounded-full border border-slate-600 text-slate-300">
+                                   {getRoleIcon(p.role)}
+                               </div>
+                           </div>
+                           <div>
+                               <div className="flex items-center gap-2">
+                                  <h3 className="font-bold text-lg leading-none">{p.name}</h3>
+                                  {p.isCaptain && <span className="bg-yellow-500 text-slate-900 text-[10px] font-black px-1.5 py-0.5 rounded">C</span>}
+                                  {p.isViceCaptain && <span className="bg-blue-500 text-white text-[10px] font-black px-1.5 py-0.5 rounded">VC</span>}
+                               </div>
+                               <p className="text-xs text-slate-400 uppercase tracking-wide mt-0.5">{p.role}</p>
+                           </div>
+                       </div>
+                    ))}
+                 </div>
+              </div>
+
+              {/* Footer */}
+              <div className="relative z-10 p-4 bg-black/40 text-center border-t border-white/10 flex justify-between items-center px-8">
+                  <p className="text-sm font-bold tracking-[0.2em] text-slate-400 uppercase">#IndianStrikers</p>
+                  <p className="text-xs text-slate-500">Generated by IS Management App</p>
+              </div>
+          </div>
       </div>
     </div>
   );

@@ -12,8 +12,8 @@ import OpponentTeams from './components/OpponentTeams';
 import Scorecard from './components/Scorecard';
 import SplashScreen from './components/SplashScreen';
 import { Player, Match, UserRole, OpponentTeam } from './types';
-import { getPlayers, savePlayers, getMatches, saveMatches, getOpponents, saveOpponents } from './services/storageService';
-import { Menu, BrainCircuit } from 'lucide-react';
+import { getPlayers, savePlayers, getMatches, saveMatches, getOpponents, saveOpponents, getTeamLogo, saveTeamLogo } from './services/storageService';
+import { Menu, BrainCircuit, Shield } from 'lucide-react';
 
 const AppContent: React.FC<{ 
   players: Player[], 
@@ -27,10 +27,13 @@ const AppContent: React.FC<{
   onUpdateOpponent: (t: OpponentTeam) => void,
   onDeleteOpponent: (id: string) => void,
   onAddMatch: (m: Match) => void,
-  onSignOut: () => void
-}> = ({ players, matches, opponents, userRole, onAddPlayer, onUpdatePlayer, onDeletePlayer, onAddOpponent, onUpdateOpponent, onDeleteOpponent, onAddMatch, onSignOut }) => {
+  onSignOut: () => void,
+  teamLogo: string,
+  onUpdateLogo: (url: string) => void
+}> = ({ players, matches, opponents, userRole, onAddPlayer, onUpdatePlayer, onDeletePlayer, onAddOpponent, onUpdateOpponent, onDeleteOpponent, onAddMatch, onSignOut, teamLogo, onUpdateLogo }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [showAICoach, setShowAICoach] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const location = useLocation();
 
   return (
@@ -40,11 +43,25 @@ const AppContent: React.FC<{
         toggle={() => setSidebarOpen(!isSidebarOpen)} 
         userRole={userRole} 
         onSignOut={onSignOut}
+        teamLogo={teamLogo}
+        onUpdateLogo={onUpdateLogo}
       />
       
       <main className="flex-1 min-w-0 transition-all duration-300 relative h-screen overflow-y-auto">
         <header className="md:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-10">
-          <h1 className="font-bold text-lg text-slate-800">Indian Strikers</h1>
+          <div className="flex items-center gap-2">
+            {!imgError ? (
+              <img 
+                src={teamLogo} 
+                alt="Logo" 
+                className="w-8 h-8 object-contain" 
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <Shield className="w-8 h-8 text-blue-600" />
+            )}
+            <h1 className="font-bold text-lg text-slate-800">Indian Strikers</h1>
+          </div>
           <button onClick={() => setSidebarOpen(true)} className="text-slate-600">
             <Menu />
           </button>
@@ -76,7 +93,7 @@ const AppContent: React.FC<{
                 />
               } 
             />
-            <Route path="/selection" element={<MatchSelection players={players} userRole={userRole} />} />
+            <Route path="/selection" element={<MatchSelection players={players} userRole={userRole} matches={matches} />} />
             <Route path="/fielding" element={<FieldingMap />} />
             <Route 
               path="/opponents" 
@@ -130,12 +147,14 @@ const App: React.FC = () => {
   const [opponents, setOpponents] = useState<OpponentTeam[]>([]);
   const [showSplash, setShowSplash] = useState(true);
   const [userRole, setUserRole] = useState<UserRole>('guest');
+  const [teamLogo, setTeamLogo] = useState<string>('logo.png');
 
   useEffect(() => {
     // Load initial data
     setPlayers(getPlayers());
     setMatches(getMatches());
     setOpponents(getOpponents());
+    setTeamLogo(getTeamLogo());
     
     // Check if splash has been seen this session
     const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
@@ -210,8 +229,14 @@ const App: React.FC = () => {
     saveMatches(updated);
   };
 
+  const handleUpdateLogo = (url: string) => {
+    if (userRole !== 'admin') return;
+    setTeamLogo(url);
+    saveTeamLogo(url);
+  };
+
   if (showSplash) {
-    return <SplashScreen onComplete={handleLoginComplete} />;
+    return <SplashScreen onComplete={handleLoginComplete} teamLogo={teamLogo} />;
   }
 
   return (
@@ -229,6 +254,8 @@ const App: React.FC = () => {
         onDeleteOpponent={handleDeleteOpponent}
         onAddMatch={handleAddMatch}
         onSignOut={handleSignOut}
+        teamLogo={teamLogo}
+        onUpdateLogo={handleUpdateLogo}
       />
     </HashRouter>
   );

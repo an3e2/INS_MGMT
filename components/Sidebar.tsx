@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   Users, 
@@ -12,7 +12,8 @@ import {
   X,
   User,
   Ticket,
-  LogOut
+  LogOut,
+  Upload
 } from 'lucide-react';
 import { UserRole } from '../types';
 
@@ -21,19 +22,35 @@ interface SidebarProps {
   toggle: () => void;
   userRole?: UserRole;
   onSignOut: () => void;
+  teamLogo: string;
+  onUpdateLogo: (url: string) => void;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, userRole = 'guest', onSignOut }) => {
+const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, userRole = 'guest', onSignOut, teamLogo, onUpdateLogo }) => {
+  const [imgError, setImgError] = useState(false);
+  
   // Order: Squad Roster, Opponent Teams, Matche Schedule, Match Selection, Fielding Map, Scorecard, and Match Day
   const links = [
     { to: '/roster', icon: <Users size={20} />, label: 'Squad Roster' },
     { to: '/opponents', icon: <Swords size={20} />, label: 'Opponent Teams' },
-    { to: '/matches', icon: <Calendar size={20} />, label: 'Match Schedule' },
+    { to: '/matches', icon: <Calendar size={20} />, label: 'Matches' },
     { to: '/selection', icon: <ClipboardList size={20} />, label: 'Match Selection' },
     { to: '/fielding', icon: <Map size={20} />, label: 'Fielding Board' },
     { to: '/scorecard', icon: <Shield size={20} />, label: 'Scorecard' },
     { to: '/match-day', icon: <LayoutDashboard size={20} />, label: 'Match Day' },
   ];
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        onUpdateLogo(reader.result as string);
+        setImgError(false); // Reset error state on new upload
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
     <>
@@ -53,8 +70,26 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, userRole = 'guest', o
       `}>
         <div className="p-6 flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-yellow-500 rounded-full flex items-center justify-center text-slate-900 font-bold shadow-lg shadow-orange-500/20">
-              IS
+            <div className="relative group w-10 h-10 flex items-center justify-center">
+              {!imgError ? (
+                <img 
+                  src={teamLogo} 
+                  alt="Logo" 
+                  className="w-full h-full object-contain drop-shadow-lg" 
+                  onError={() => setImgError(true)}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-blue-600 rounded-lg shadow-lg">
+                  <Shield className="text-white w-6 h-6" />
+                </div>
+              )}
+              
+              {userRole === 'admin' && (
+                <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-lg z-10">
+                  <Upload size={16} className="text-white" />
+                  <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
+                </label>
+              )}
             </div>
             <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-white">
               Indian Strikers
