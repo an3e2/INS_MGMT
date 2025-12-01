@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Trophy, 
   Users, 
@@ -14,9 +13,16 @@ import {
   Save,
   Search,
   Check,
-  Calendar
+  Calendar,
+  RotateCcw,
+  Flame,
+  UserX,
+  User,
+  Shield,
+  Sword,
+  CircleDot
 } from 'lucide-react';
-import { OpponentTeam, Player, Match } from '../types';
+import { OpponentTeam, Player, Match, PlayerRole } from '../types';
 import { useLocation } from 'react-router-dom';
 
 // --- Types ---
@@ -31,7 +37,8 @@ const DISMISSAL_TYPES = [
   "Hit Wicket",
   "Retired Hurt",
   "Obstructing Field",
-  "Timed Out"
+  "Timed Out",
+  "Did not bat"
 ];
 
 interface BattingEntry {
@@ -62,8 +69,7 @@ interface BowlingEntry {
 interface Innings {
   batting: BattingEntry[];
   bowling: BowlingEntry[];
-  byeRuns: number; // Manual entry for Byes
-  // Derived / Calculated
+  byeRuns: number;
   extras: number;
   totalRuns: number;
   wickets: number;
@@ -96,6 +102,33 @@ interface LiveState {
   bowlerId: string;
 }
 
+interface BallEvent {
+  inning: 0 | 1;
+  over: number;
+  ballNumber: number; // Ball within the over (1-6+)
+  striker: string;
+  bowler: string;
+  runs: number;
+  extrasType?: 'WD' | 'NB' | 'B' | 'LB';
+  extrasRuns: number;
+  isWicket: boolean;
+  description: string;
+}
+
+interface PendingWicket {
+  runs: number;
+  isWide: boolean;
+  isNoBall: boolean;
+  isBye: boolean;
+  isLegBye: boolean;
+}
+
+interface HistoryState {
+  data: ScorecardData;
+  commentary: BallEvent[];
+  liveState: LiveState;
+}
+
 interface ScorecardProps {
   opponents?: OpponentTeam[];
   players?: Player[];
@@ -105,11 +138,28 @@ interface ScorecardProps {
 const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], matches = [] }) => {
   const location = useLocation();
   const [activeTab, setActiveTab] = useState<0 | 1 | 2>(0);
-  const [showSummary, setShowSummary] = useState(false);
   const [isLiveMode, setIsLiveMode] = useState(false);
-  const [playerSelector, setPlayerSelector] = useState<{ inningIdx: 0 | 1, type: 'batsman' | 'bowler' } | null>(null);
+  const [playerSelector, setPlayerSelector] = useState<{ inningIdx: 0 | 1, type: 'batsman' | 'bowler', autoTrigger?: boolean } | null>(null);
+  const [selectionPreview, setSelectionPreview] = useState<Partial<Player> | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
+  // Wicket Modal State
+  const [wicketModal, setWicketModal] = useState<{ isOpen: boolean, pendingData: PendingWicket | null }>({
+    isOpen: false,
+    pendingData: null
+  });
+  const [wicketDetails, setWicketDetails] = useState({
+    type: 'Caught',
+    fielderName: ''
+  });
+
+  // Animation State
+  const [celebration, setCelebration] = useState<{ type: '4' | '6' | 'W' | null, visible: boolean }>({ type: null, visible: false });
+
+  // History for Undo
+  const [history, setHistory] = useState<HistoryState[]>([]);
+  const [ballCommentary, setBallCommentary] = useState<BallEvent[]>([]);
+
   // Live Scoring State
   const [liveState, setLiveState] = useState<LiveState>({
     strikerId: '',
@@ -117,6 +167,7 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
     bowlerId: ''
   });
 
+  // Initial State: Empty lists
   const [data, setData] = useState<ScorecardData>({
     matchInfo: {
       teamAName: 'Indian Strikers',
@@ -129,8 +180,8 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
     },
     innings: [
       {
-        batting: [{ id: '1', name: '', runs: 0, balls: 0, fours: 0, sixes: 0, howOut: '', fielder: '', bowler: '' }, { id: '2', name: '', runs: 0, balls: 0, fours: 0, sixes: 0, howOut: '', fielder: '', bowler: '' }],
-        bowling: [{ id: '1', name: '', overs: 0, maidens: 0, runs: 0, wickets: 0, wides: 0, noBalls: 0, legByes: 0, dots: 0 }],
+        batting: [],
+        bowling: [],
         byeRuns: 0,
         extras: 0,
         totalRuns: 0,
@@ -138,8 +189,8 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
         overs: 0
       },
       {
-        batting: [{ id: '1', name: '', runs: 0, balls: 0, fours: 0, sixes: 0, howOut: '', fielder: '', bowler: '' }, { id: '2', name: '', runs: 0, balls: 0, fours: 0, sixes: 0, howOut: '', fielder: '', bowler: '' }],
-        bowling: [{ id: '1', name: '', overs: 0, maidens: 0, runs: 0, wickets: 0, wides: 0, noBalls: 0, legByes: 0, dots: 0 }],
+        batting: [],
+        bowling: [],
         byeRuns: 0,
         extras: 0,
         totalRuns: 0,
@@ -150,21 +201,34 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
   });
 
   const [validation, setValidation] = useState<ValidationResult>({ isValid: true, errors: [] });
+  const commentaryEndRef = useRef<HTMLDivElement>(null);
+
+  // Combine Indian Strikers + Opponents for dropdowns
+  const allTeams = [
+    { id: 'home', name: 'Indian Strikers' },
+    ...opponents
+  ];
 
   useEffect(() => {
-    // Check if a match was passed via navigation
     if (location.state && location.state.match) {
         loadMatchData(location.state.match);
-        setActiveTab(2); // Switch to Match Info tab
+        setActiveTab(2);
     }
   }, [location.state]);
+
+  useEffect(() => {
+    // Auto-scroll commentary
+    if (commentaryEndRef.current) {
+        commentaryEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [ballCommentary]);
 
   const loadMatchData = (match: Match) => {
     setData(prev => ({
         ...prev,
         matchInfo: {
             ...prev.matchInfo,
-            teamAName: 'Indian Strikers',
+            teamAName: 'Indian Strikers', // Default, can be changed
             teamBName: match.opponent,
             venue: match.venue,
             date: match.date,
@@ -183,13 +247,9 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
       }
   };
 
-  // Ground options RCA-1 to RCA-15
-  const groundOptions = Array.from({ length: 15 }, (_, i) => `RCA-${i + 1}`);
-
-  // --- Helpers ---
-  const getCurrentInningsIndex = (): 0 | 1 => {
-     if (activeTab === 0) return 0;
-     return activeTab === 1 ? 0 : 1;
+  const triggerAnimation = (type: '4' | '6' | 'W') => {
+      setCelebration({ type, visible: true });
+      setTimeout(() => setCelebration(prev => ({ ...prev, visible: false })), 3000);
   };
 
   const getOversFromBalls = (balls: number) => {
@@ -219,13 +279,10 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
     return (r / trueOvers).toFixed(2);
   };
 
-  // --- Helper to get team players ---
   const getTeamPlayers = (teamName: string) => {
-    // Check if it's our team
     if (teamName === 'Indian Strikers') {
       return players.map(p => ({ id: p.id, name: p.name }));
     }
-    // Check if it's an opponent
     const opponent = opponents.find(op => op.name === teamName);
     if (opponent) {
       return opponent.players.map(p => ({ id: p.id, name: p.name }));
@@ -243,45 +300,51 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
     return getTeamPlayers(data.matchInfo.teamAName);
   };
 
-  // --- Auto-Calculation Logic ---
+  const findFullPlayer = (id: string, name: string): Partial<Player> => {
+      const player = players.find(p => p.id === id);
+      if (player) return player;
+      
+      // Return a basic structure for opponents or unknown players
+      return {
+          id,
+          name,
+          role: PlayerRole.BATSMAN, // Default
+          avatarUrl: `https://ui-avatars.com/api/?name=${name}&background=random`,
+          matchesPlayed: 0,
+          runsScored: 0,
+          wicketsTaken: 0,
+          average: 0
+      };
+  };
+
   const calculateInningsTotals = (inning: Innings): Innings => {
     const batRuns = inning.batting.reduce((sum, b) => sum + Number(b.runs || 0), 0);
     
-    // Calculate Extras
-    // Wides (From Bowling Card)
     const wides = inning.bowling.reduce((sum, b) => sum + Number(b.wides || 0), 0);
-    // No Balls (From Bowling Card)
     const noBalls = inning.bowling.reduce((sum, b) => sum + Number(b.noBalls || 0), 0);
-    // Leg Byes (From Bowling Card)
     const legByes = inning.bowling.reduce((sum, b) => sum + Number(b.legByes || 0), 0);
-    // Byes (Manual Input in Extras Box)
     const byes = Number(inning.byeRuns || 0);
     
     const calculatedExtras = wides + noBalls + legByes + byes;
     const totalRuns = batRuns + calculatedExtras;
 
-    // Wickets = Count of How Out (not empty and not 'not out'/'retired')
     const wickets = inning.batting.filter(b => {
       if (!b.howOut) return false;
       const val = b.howOut.toLowerCase();
-      return !val.includes('not out') && !val.includes('retired');
+      return !val.includes('not out') && !val.includes('retired') && !val.includes('did not bat');
     }).length;
 
-    // Overs = Sum of bowling overs
     const totalBalls = inning.bowling.reduce((sum, b) => {
         const ov = Number(b.overs || 0);
-        const integerPart = Math.floor(ov);
-        const decimalPart = Math.round((ov - integerPart) * 10);
-        return sum + integerPart * 6 + decimalPart;
+        return sum + Math.floor(ov) * 6 + Math.round((ov % 1) * 10);
     }, 0);
-    const totalOvers = getOversFromBalls(totalBalls);
 
     return {
       ...inning,
       extras: calculatedExtras,
       totalRuns,
       wickets,
-      overs: totalOvers
+      overs: getOversFromBalls(totalBalls)
     };
   };
 
@@ -310,37 +373,119 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
   };
 
   // --- Live Scoring Handlers ---
+
+  const handleUndo = () => {
+    if (history.length === 0) return;
+    const lastState = history[history.length - 1];
+    const newHistory = history.slice(0, -1);
+    
+    setData(lastState.data);
+    setBallCommentary(lastState.commentary);
+    setLiveState(lastState.liveState); // CRITICAL: Restore live state (striker positions)
+    setHistory(newHistory);
+  };
   
   const handleScoreBall = (runs: number, isWide: boolean, isNoBall: boolean, isWicket: boolean, isBye: boolean = false, isLegBye: boolean = false) => {
-    const innIdx = getCurrentInningsIndex();
-    const newInnings = [...data.innings];
-    const currentInning = newInnings[innIdx];
     
-    // 1. Validate Selections
+    // Validate Selections
     if (!liveState.strikerId || !liveState.nonStrikerId || !liveState.bowlerId) {
       alert("Please select Striker, Non-Striker and Bowler first.");
       return;
     }
 
+    // Intercept Wicket for Modal
+    if (isWicket) {
+        setWicketModal({
+            isOpen: true,
+            pendingData: { runs, isWide, isNoBall, isBye, isLegBye }
+        });
+        // Reset details
+        setWicketDetails({ type: 'Caught', fielderName: '' });
+        return;
+    }
+
+    processBall(runs, isWide, isNoBall, false, isBye, isLegBye);
+  };
+
+  const handleConfirmWicket = () => {
+     if (!wicketModal.pendingData) return;
+     
+     const { runs, isWide, isNoBall, isBye, isLegBye } = wicketModal.pendingData;
+     processBall(runs, isWide, isNoBall, true, isBye, isLegBye, wicketDetails.type, wicketDetails.fielderName);
+     setWicketModal({ isOpen: false, pendingData: null });
+  };
+
+  const processBall = (
+      runs: number, 
+      isWide: boolean, 
+      isNoBall: boolean, 
+      isWicket: boolean, 
+      isBye: boolean, 
+      isLegBye: boolean,
+      dismissalType: string = '',
+      fielderName: string = ''
+  ) => {
+    // 1. Snapshot for Undo
+    // Deep copy current state BEFORE mutation
+    setHistory(prev => [...prev, JSON.parse(JSON.stringify({ 
+        data, 
+        commentary: ballCommentary,
+        liveState 
+    }))]);
+
+    const innIdx = activeTab === 0 ? 0 : activeTab === 1 ? 0 : 1;
+    
+    // Improved Immutability: Deep copy the specific inning we are modifying
+    // to avoid mutating the state that was just snapshotted (although JSON.parse strategy above handles safety, 
+    // explicit copying is better practice)
+    const newInnings = data.innings.map((ing, idx) => {
+        if (idx === innIdx) {
+            return {
+                ...ing,
+                batting: ing.batting.map(b => ({...b})),
+                bowling: ing.bowling.map(b => ({...b}))
+            };
+        }
+        return ing;
+    }) as [Innings, Innings];
+
+    const currentInning = newInnings[innIdx];
+
     const strikerIdx = currentInning.batting.findIndex(p => p.id === liveState.strikerId);
     const bowlerIdx = currentInning.bowling.findIndex(p => p.id === liveState.bowlerId);
-
+    
+    // Should be found if validations passed
     if (strikerIdx === -1 || bowlerIdx === -1) return;
 
-    const striker = { ...currentInning.batting[strikerIdx] };
-    const bowler = { ...currentInning.bowling[bowlerIdx] };
+    const striker = currentInning.batting[strikerIdx];
+    const bowler = currentInning.bowling[bowlerIdx];
 
-    // 2. Update Stats
-    let runsScored = runs;
+    // Commentary Data
+    let description = "";
+    let extrasType: 'WD' | 'NB' | 'B' | 'LB' | undefined;
+    let extrasRuns = 0;
+
+    // Logic
     let validBall = true;
     let isDot = runs === 0 && !isWide && !isNoBall && !isBye && !isLegBye;
+    let ballRuns = runs; // Runs credited to batsman
 
+    // Wides: Runs arg is EXTRA runs apart from wide (e.g. boundary off wide)
     if (isWide) {
-      bowler.wides = Number(bowler.wides || 0) + 1 + runs; 
-      bowler.runs = Number(bowler.runs || 0) + 1 + runs;
+      extrasType = 'WD';
+      extrasRuns = 1 + runs;
+      bowler.wides = Number(bowler.wides || 0) + extrasRuns; 
+      bowler.runs = Number(bowler.runs || 0) + extrasRuns;
+      
+      description = runs > 0 ? `Wide + ${runs} Runs` : `Wide Ball`;
       validBall = false;
       isDot = false;
-    } else if (isNoBall) {
+      ballRuns = 0; // Batsman gets 0
+    } 
+    // No Balls
+    else if (isNoBall) {
+      extrasType = 'NB';
+      extrasRuns = 1;
       bowler.noBalls = Number(bowler.noBalls || 0) + 1;
       bowler.runs = Number(bowler.runs || 0) + 1 + runs;
       
@@ -348,57 +493,104 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
       striker.balls = Number(striker.balls || 0) + 1; 
       if (runs === 4) striker.fours = Number(striker.fours || 0) + 1;
       if (runs === 6) striker.sixes = Number(striker.sixes || 0) + 1;
-      validBall = false;
+
+      description = runs > 0 ? `No Ball + ${runs} Runs` : `No Ball`;
+      validBall = false; // Doesn't count as ball bowled in over count (usually)
       isDot = false;
-    } else if (isBye) {
+    } 
+    // Byes
+    else if (isBye) {
+      extrasType = 'B';
+      extrasRuns = runs;
       currentInning.byeRuns = Number(currentInning.byeRuns || 0) + runs;
       striker.balls = Number(striker.balls || 0) + 1;
-      isDot = true; 
-    } else if (isLegBye) {
+      description = `${runs} Bye${runs > 1 ? 's' : ''}`;
+      isDot = true; // Technically a dot for the bowler stats
+      ballRuns = 0;
+    } 
+    // Leg Byes
+    else if (isLegBye) {
+      extrasType = 'LB';
+      extrasRuns = runs;
       bowler.legByes = Number(bowler.legByes || 0) + runs;
       striker.balls = Number(striker.balls || 0) + 1;
+      description = `${runs} Leg Bye${runs > 1 ? 's' : ''}`;
       isDot = true;
-    } else {
+      ballRuns = 0;
+    } 
+    // Standard Delivery
+    else {
       striker.runs = Number(striker.runs || 0) + runs;
       striker.balls = Number(striker.balls || 0) + 1;
       if (runs === 4) striker.fours = Number(striker.fours || 0) + 1;
       if (runs === 6) striker.sixes = Number(striker.sixes || 0) + 1;
       
       bowler.runs = Number(bowler.runs || 0) + runs;
+      description = runs === 0 ? "Dot Ball" : `${runs} Run${runs !== 1 ? 's' : ''}`;
     }
 
+    // Update Overs
     if (validBall) {
       bowler.overs = addBallsToOvers(bowler.overs, 1);
       if (isDot) bowler.dots = Number(bowler.dots || 0) + 1;
     }
 
-    if (isWicket && !isNoBall && !isWide) {
-        striker.howOut = 'Caught'; 
-        bowler.wickets = Number(bowler.wickets || 0) + 1;
+    // Wicket Logic
+    if (isWicket && !isNoBall && !isWide) { // Standard wicket
+        striker.howOut = dismissalType;
+        striker.fielder = fielderName;
+        striker.bowler = bowler.name; // Automatically credit current bowler
+
+        // Credit wicket to bowler unless run out (usually)
+        if (dismissalType !== 'Run Out' && dismissalType !== 'Timed Out' && dismissalType !== 'Obstructing Field' && dismissalType !== 'Retired Hurt') {
+            bowler.wickets = Number(bowler.wickets || 0) + 1;
+        }
+
+        description = `WICKET! (${dismissalType}) ` + description;
+        triggerAnimation('W');
         setLiveState(prev => ({ ...prev, strikerId: '' }));
+        // Trigger batsman select
+        setPlayerSelector({ inningIdx: innIdx as 0|1, type: 'batsman', autoTrigger: true });
     }
 
-    // 3. Update Arrays
-    currentInning.batting[strikerIdx] = striker;
-    currentInning.bowling[bowlerIdx] = bowler;
-    newInnings[innIdx] = calculateInningsTotals(currentInning); 
+    // Trigger Animations
+    if (runs === 4 && !isBye && !isLegBye) triggerAnimation('4');
+    if (runs === 6 && !isBye && !isLegBye) triggerAnimation('6');
 
-    // 4. Swap Ends logic
+    // Commentary Update
+    const newEvent: BallEvent = {
+        inning: innIdx as 0|1,
+        over: Math.floor(calculateInningsTotals(currentInning).overs), // Simple appx
+        ballNumber: Math.round((calculateInningsTotals(currentInning).overs % 1) * 10), // Simple appx
+        striker: striker.name,
+        bowler: bowler.name,
+        runs: ballRuns,
+        extrasType,
+        extrasRuns,
+        isWicket,
+        description
+    };
+    setBallCommentary(prev => [...prev, newEvent]);
+
+    // Swap Ends
     if (runs % 2 !== 0 && validBall) {
         setLiveState(prev => ({ ...prev, strikerId: prev.nonStrikerId, nonStrikerId: prev.strikerId }));
     }
     
-    // Check over completion (simplified)
+    // Check Over Complete
     const newOvers = Number(bowler.overs);
     if (validBall && Math.round((newOvers % 1) * 10) === 0 && newOvers > 0) {
-        // Over complete
         setLiveState(prev => ({ ...prev, strikerId: prev.nonStrikerId, nonStrikerId: prev.strikerId, bowlerId: '' }));
+        // Trigger Bowler Select
+        if (!isWicket) { 
+            setPlayerSelector({ inningIdx: innIdx as 0|1, type: 'bowler', autoTrigger: true });
+        }
     }
 
     updateData({ ...data, innings: newInnings as [Innings, Innings] });
   };
 
-  // --- Handlers for Inputs ---
+  // --- Input Handlers ---
 
   const handleMatchInfoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setData({
@@ -429,15 +621,20 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
     setPlayerSelector({ inningIdx: innIdx as 0|1, type: type === 'batting' ? 'batsman' : 'bowler' });
   };
 
-  const handleAddPlayerFromModal = (player: { id: string, name: string }) => {
-     if (!playerSelector) return;
-     const { inningIdx, type } = playerSelector;
+  const handlePreviewPlayer = (partialPlayer: { id: string, name: string }) => {
+     const fullDetails = findFullPlayer(partialPlayer.id, partialPlayer.name);
+     setSelectionPreview(fullDetails);
+  };
+
+  const handleAddPlayerFromPreview = () => {
+     if (!playerSelector || !selectionPreview) return;
+     const { inningIdx, type, autoTrigger } = playerSelector;
      const newInnings = [...data.innings];
      
      if (type === 'batsman') {
-        newInnings[inningIdx].batting.push({
-           id: player.id || Date.now().toString(),
-           name: player.name,
+        const newBatsman = {
+           id: selectionPreview.id || Date.now().toString(),
+           name: selectionPreview.name || 'Unknown',
            runs: 0,
            balls: 0,
            fours: 0,
@@ -445,11 +642,15 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
            howOut: 'Not Out',
            fielder: '',
            bowler: ''
-        });
+        };
+        newInnings[inningIdx].batting.push(newBatsman);
+        if (autoTrigger) {
+            setLiveState(prev => ({ ...prev, strikerId: newBatsman.id }));
+        }
      } else {
-        newInnings[inningIdx].bowling.push({
-           id: player.id || Date.now().toString(),
-           name: player.name,
+        const newBowler = {
+           id: selectionPreview.id || Date.now().toString(),
+           name: selectionPreview.name || 'Unknown',
            overs: 0,
            maidens: 0,
            runs: 0,
@@ -458,11 +659,16 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
            noBalls: 0,
            legByes: 0,
            dots: 0
-        });
+        };
+        newInnings[inningIdx].bowling.push(newBowler);
+        if (autoTrigger) {
+            setLiveState(prev => ({ ...prev, bowlerId: newBowler.id }));
+        }
      }
      
      updateData({ ...data, innings: newInnings as [Innings, Innings] });
      setPlayerSelector(null);
+     setSelectionPreview(null);
      setSearchQuery('');
   };
 
@@ -485,7 +691,6 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
             Match Info
           </h3>
           
-          {/* Match Selection Dropdown */}
           <div className="bg-slate-100 p-4 rounded-xl border border-slate-200">
              <label className="block text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-2">
                <Calendar size={14} /> Select Scheduled Fixture (Auto-fill)
@@ -517,27 +722,25 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
                   />
                </div>
                <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Team A (Batting 1st?)</label>
-                  <input 
+                  <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Team A (Usually Batting 1st)</label>
+                  <select 
                     name="teamAName"
                     value={data.matchInfo.teamAName}
                     onChange={handleMatchInfoChange}
                     className="w-full p-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-800"
-                  />
+                  >
+                    {allTeams.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
+                  </select>
                </div>
                <div>
-                  <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Team B (Batting 2nd?)</label>
+                  <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Team B (Usually Batting 2nd)</label>
                   <select 
                     name="teamBName"
                     value={data.matchInfo.teamBName}
                     onChange={handleMatchInfoChange}
                     className="w-full p-3 bg-white border border-slate-200 rounded-xl text-slate-800"
                   >
-                    <option value="">Select Opponent</option>
-                    {opponents.map(team => (
-                      <option key={team.id} value={team.name}>{team.name}</option>
-                    ))}
-                    <option value="Opponent">Custom / Unknown</option>
+                    {allTeams.map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
                   </select>
                </div>
              </div>
@@ -550,7 +753,7 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
                     onChange={handleMatchInfoChange}
                     className="w-full p-3 bg-white border border-slate-200 rounded-xl text-slate-800"
                   >
-                    {groundOptions.map(g => <option key={g} value={g}>{g}</option>)}
+                    {Array.from({ length: 15 }, (_, i) => `RCA-${i + 1}`).map(g => <option key={g} value={g}>{g}</option>)}
                   </select>
                </div>
                <div>
@@ -595,12 +798,10 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
     const inning = data.innings[inningIdx];
     const teamName = inningIdx === 0 ? data.matchInfo.teamAName : data.matchInfo.teamBName;
     const bowlingTeamName = inningIdx === 0 ? data.matchInfo.teamBName : data.matchInfo.teamAName;
-    
-    // Dropdown Data Sources
     const fieldingPlayers = getBowlingTeamPlayers(inningIdx as 0 | 1);
 
     return (
-      <div className="space-y-8 animate-fade-in">
+      <div className="space-y-8 animate-fade-in relative">
         {/* Header Summary */}
         <div className="flex justify-between items-end border-b border-slate-200 pb-4">
            <div>
@@ -615,61 +816,114 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
 
         {/* Live Scoring Panel */}
         {isLiveMode && (
-          <div className="bg-slate-900 rounded-2xl p-6 text-white shadow-2xl border border-slate-700">
-             <div className="flex justify-between items-center mb-6">
-                <h4 className="font-bold flex items-center gap-2"><Zap className="text-yellow-400 fill-yellow-400" /> Live Scoring Control</h4>
-                <div className="flex gap-2">
-                   <select 
-                      className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-sm text-white"
-                      value={liveState.strikerId}
-                      onChange={(e) => setLiveState({...liveState, strikerId: e.target.value})}
-                   >
-                     <option value="">Striker</option>
-                     {inning.batting.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                   </select>
-                   <select 
-                      className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-sm text-white"
-                      value={liveState.nonStrikerId}
-                      onChange={(e) => setLiveState({...liveState, nonStrikerId: e.target.value})}
-                   >
-                     <option value="">Non-Striker</option>
-                     {inning.batting.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                   </select>
-                   <select 
-                      className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-sm text-white"
-                      value={liveState.bowlerId}
-                      onChange={(e) => setLiveState({...liveState, bowlerId: e.target.value})}
-                   >
-                     <option value="">Bowler</option>
-                     {inning.bowling.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                   </select>
-                </div>
-             </div>
+          <div className="bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-700">
              
-             <div className="grid grid-cols-4 md:grid-cols-8 gap-2 mb-4">
-                {[0, 1, 2, 3, 4, 6].map(run => (
-                  <button 
-                    key={run} 
-                    onClick={() => handleScoreBall(run, false, false, false)}
-                    className="py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-black text-xl border border-slate-700 transition-all hover:-translate-y-1 text-white"
-                  >
-                    {run}
-                  </button>
-                ))}
-                <button onClick={() => handleScoreBall(0, false, false, true)} className="py-3 bg-red-600 hover:bg-red-700 rounded-xl font-bold border border-red-500 text-white">WKT</button>
-                <button onClick={() => handleScoreBall(5, false, false, false)} className="py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold border border-slate-700 text-white">5</button>
+             {/* Live Header & Controls */}
+             <div className="p-4 bg-slate-950 border-b border-slate-800 flex flex-col md:flex-row justify-between gap-4">
+                <div className="flex items-center gap-3">
+                   <div className="bg-red-600 px-2 py-1 rounded text-xs font-bold text-white animate-pulse flex items-center gap-1">
+                     <span className="w-2 h-2 bg-white rounded-full"></span> LIVE
+                   </div>
+                   <div className="flex gap-2">
+                      <select className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-sm text-white max-w-[120px]" value={liveState.strikerId} onChange={(e) => setLiveState({...liveState, strikerId: e.target.value})}>
+                        <option value="">Striker</option>
+                        {inning.batting.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                      </select>
+                      <select className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-sm text-white max-w-[120px]" value={liveState.nonStrikerId} onChange={(e) => setLiveState({...liveState, nonStrikerId: e.target.value})}>
+                        <option value="">Non-Striker</option>
+                        {inning.batting.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                      </select>
+                      <select className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-sm text-white max-w-[120px]" value={liveState.bowlerId} onChange={(e) => setLiveState({...liveState, bowlerId: e.target.value})}>
+                        <option value="">Bowler</option>
+                        {inning.bowling.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                      </select>
+                   </div>
+                </div>
+                <button 
+                  onClick={handleUndo}
+                  disabled={history.length === 0}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors text-sm disabled:opacity-50"
+                >
+                  <RotateCcw size={14} /> Undo Last Ball
+                </button>
              </div>
 
-             <div className="grid grid-cols-4 gap-2">
-                <button onClick={() => handleScoreBall(0, true, false, false)} className="py-2 bg-orange-900 hover:bg-orange-800 text-orange-100 rounded-lg font-bold border border-orange-700">Wide</button>
-                <button onClick={() => handleScoreBall(1, true, false, false)} className="py-2 bg-orange-900 hover:bg-orange-800 text-orange-100 rounded-lg font-bold border border-orange-700">WD+1</button>
-                <button onClick={() => handleScoreBall(0, false, true, false)} className="py-2 bg-yellow-800 hover:bg-yellow-700 text-yellow-100 rounded-lg font-bold border border-yellow-700">No Ball</button>
-                <button onClick={() => handleScoreBall(1, false, true, false)} className="py-2 bg-yellow-800 hover:bg-yellow-700 text-yellow-100 rounded-lg font-bold border border-yellow-700">NB+1</button>
-                
-                <button onClick={() => handleScoreBall(1, false, false, false, true, false)} className="py-2 bg-blue-900 hover:bg-blue-800 text-blue-100 rounded-lg font-bold border border-blue-700">Bye 1</button>
-                <button onClick={() => handleScoreBall(4, false, false, false, true, false)} className="py-2 bg-blue-900 hover:bg-blue-800 text-blue-100 rounded-lg font-bold border border-blue-700">Bye 4</button>
-                <button onClick={() => handleScoreBall(1, false, false, false, false, true)} className="py-2 bg-purple-900 hover:bg-purple-800 text-purple-100 rounded-lg font-bold border border-purple-700">Leg Bye 1</button>
-                <button onClick={() => handleScoreBall(4, false, false, false, false, true)} className="py-2 bg-purple-900 hover:bg-purple-800 text-purple-100 rounded-lg font-bold border border-purple-700">Leg Bye 4</button>
+             <div className="flex flex-col md:flex-row">
+                {/* Scoring Grid */}
+                <div className="flex-1 p-4 md:p-6 border-b md:border-b-0 md:border-r border-slate-800">
+                    <div className="grid grid-cols-4 md:grid-cols-6 gap-2 mb-4">
+                        {[0, 1, 2, 3, 4, 6].map(run => (
+                          <button 
+                            key={run} 
+                            onClick={() => handleScoreBall(run, false, false, false)}
+                            className="py-4 bg-slate-800 hover:bg-slate-700 rounded-xl font-black text-2xl border border-slate-700 transition-all hover:-translate-y-1 text-white shadow-lg active:scale-95"
+                          >
+                            {run}
+                          </button>
+                        ))}
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mb-4">
+                        <button onClick={() => handleScoreBall(0, false, false, true)} className="py-3 bg-red-600 hover:bg-red-700 rounded-xl font-bold border border-red-500 text-white shadow-lg shadow-red-900/50">WICKET</button>
+                        <button onClick={() => handleScoreBall(5, false, false, false)} className="py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold border border-slate-700 text-white">5 Runs</button>
+                    </div>
+
+                    <div className="space-y-2">
+                       <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Extras</p>
+                       <div className="grid grid-cols-5 gap-1.5">
+                          {/* Wides */}
+                          <button onClick={() => handleScoreBall(0, true, false, false)} className="p-2 bg-orange-900/40 text-orange-200 border border-orange-800 rounded text-xs font-bold hover:bg-orange-900">WD</button>
+                          <button onClick={() => handleScoreBall(1, true, false, false)} className="p-2 bg-orange-900/40 text-orange-200 border border-orange-800 rounded text-xs font-bold hover:bg-orange-900">WD+1</button>
+                          <button onClick={() => handleScoreBall(2, true, false, false)} className="p-2 bg-orange-900/40 text-orange-200 border border-orange-800 rounded text-xs font-bold hover:bg-orange-900">WD+2</button>
+                          <button onClick={() => handleScoreBall(3, true, false, false)} className="p-2 bg-orange-900/40 text-orange-200 border border-orange-800 rounded text-xs font-bold hover:bg-orange-900">WD+3</button>
+                          <button onClick={() => handleScoreBall(4, true, false, false)} className="p-2 bg-orange-900/40 text-orange-200 border border-orange-800 rounded text-xs font-bold hover:bg-orange-900">WD+4</button>
+                          
+                          {/* No Balls */}
+                          <button onClick={() => handleScoreBall(0, false, true, false)} className="p-2 bg-yellow-900/40 text-yellow-200 border border-yellow-800 rounded text-xs font-bold hover:bg-yellow-900">NB</button>
+                          <button onClick={() => handleScoreBall(1, false, true, false)} className="p-2 bg-yellow-900/40 text-yellow-200 border border-yellow-800 rounded text-xs font-bold hover:bg-yellow-900">NB+1</button>
+                          <button onClick={() => handleScoreBall(2, false, true, false)} className="p-2 bg-yellow-900/40 text-yellow-200 border border-yellow-800 rounded text-xs font-bold hover:bg-yellow-900">NB+2</button>
+                          <button onClick={() => handleScoreBall(3, false, true, false)} className="p-2 bg-yellow-900/40 text-yellow-200 border border-yellow-800 rounded text-xs font-bold hover:bg-yellow-900">NB+3</button>
+                          <button onClick={() => handleScoreBall(4, false, true, false)} className="p-2 bg-yellow-900/40 text-yellow-200 border border-yellow-800 rounded text-xs font-bold hover:bg-yellow-900">NB+4</button>
+
+                          {/* Byes */}
+                          <button onClick={() => handleScoreBall(1, false, false, false, true)} className="p-2 bg-blue-900/40 text-blue-200 border border-blue-800 rounded text-xs font-bold hover:bg-blue-900">B+1</button>
+                          <button onClick={() => handleScoreBall(2, false, false, false, true)} className="p-2 bg-blue-900/40 text-blue-200 border border-blue-800 rounded text-xs font-bold hover:bg-blue-900">B+2</button>
+                          <button onClick={() => handleScoreBall(3, false, false, false, true)} className="p-2 bg-blue-900/40 text-blue-200 border border-blue-800 rounded text-xs font-bold hover:bg-blue-900">B+3</button>
+                          <button onClick={() => handleScoreBall(4, false, false, false, true)} className="p-2 bg-blue-900/40 text-blue-200 border border-blue-800 rounded text-xs font-bold hover:bg-blue-900">B+4</button>
+                          <div className="p-2"></div> {/* Spacer */}
+
+                          {/* Leg Byes */}
+                          <button onClick={() => handleScoreBall(1, false, false, false, false, true)} className="p-2 bg-purple-900/40 text-purple-200 border border-purple-800 rounded text-xs font-bold hover:bg-purple-900">LB+1</button>
+                          <button onClick={() => handleScoreBall(2, false, false, false, false, true)} className="p-2 bg-purple-900/40 text-purple-200 border border-purple-800 rounded text-xs font-bold hover:bg-purple-900">LB+2</button>
+                          <button onClick={() => handleScoreBall(3, false, false, false, false, true)} className="p-2 bg-purple-900/40 text-purple-200 border border-purple-800 rounded text-xs font-bold hover:bg-purple-900">LB+3</button>
+                          <button onClick={() => handleScoreBall(4, false, false, false, false, true)} className="p-2 bg-purple-900/40 text-purple-200 border border-purple-800 rounded text-xs font-bold hover:bg-purple-900">LB+4</button>
+                       </div>
+                    </div>
+                </div>
+
+                {/* Commentary Feed */}
+                <div className="w-full md:w-80 bg-slate-950/50 flex flex-col h-64 md:h-auto border-l border-slate-800">
+                   <div className="p-3 bg-slate-900 border-b border-slate-800 text-xs font-bold text-slate-400 uppercase">
+                      Ball by Ball
+                   </div>
+                   <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar relative">
+                      {ballCommentary.filter(b => b.inning === inningIdx).length === 0 && (
+                          <div className="text-center text-slate-600 text-xs mt-10">Match started...</div>
+                      )}
+                      {ballCommentary.filter(b => b.inning === inningIdx).map((ball, idx) => (
+                          <div key={idx} className={`text-sm p-2 rounded-lg border ${ball.isWicket ? 'bg-red-900/20 border-red-800' : 'bg-slate-800/50 border-slate-700/50'}`}>
+                             <div className="flex items-center gap-2 mb-1">
+                                <span className="font-mono font-bold text-slate-400 text-xs">{ball.over}.{ball.ballNumber}</span>
+                                <span className="text-xs text-slate-500">{ball.bowler} to {ball.striker}</span>
+                             </div>
+                             <div className="flex items-center justify-between">
+                                <span className={`font-bold ${ball.isWicket ? 'text-red-400' : 'text-white'}`}>{ball.description}</span>
+                                {ball.runs >= 4 && !ball.extrasType && <span className="text-xs font-black bg-white text-slate-900 px-1 rounded">{ball.runs}</span>}
+                             </div>
+                          </div>
+                      ))}
+                      <div ref={commentaryEndRef} />
+                   </div>
+                </div>
              </div>
           </div>
         )}
@@ -917,6 +1171,35 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
             </table>
           </div>
         </div>
+
+        {/* Celebration Overlay */}
+        {celebration.visible && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm animate-fade-in"></div>
+                <div className="relative z-10 animate-zoom-in">
+                    {celebration.type === '4' && (
+                        <div className="text-center">
+                             <h1 className="text-[150px] md:text-[250px] font-black text-white italic drop-shadow-[0_0_50px_rgba(59,130,246,0.8)] leading-none">4</h1>
+                             <p className="text-4xl md:text-6xl font-black text-blue-400 uppercase tracking-widest mt-4 animate-bounce">Boundary!</p>
+                        </div>
+                    )}
+                    {celebration.type === '6' && (
+                        <div className="text-center">
+                             <h1 className="text-[150px] md:text-[250px] font-black text-white italic drop-shadow-[0_0_50px_rgba(249,115,22,0.8)] leading-none">6</h1>
+                             <p className="text-4xl md:text-6xl font-black text-orange-500 uppercase tracking-widest mt-4 animate-bounce">Maximum!</p>
+                        </div>
+                    )}
+                    {celebration.type === 'W' && (
+                        <div className="text-center">
+                             <div className="w-48 h-48 md:w-64 md:h-64 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-[0_0_60px_rgba(220,38,38,0.6)] animate-pulse">
+                                <Flame size={120} className="text-white" />
+                             </div>
+                             <p className="text-5xl md:text-7xl font-black text-white uppercase tracking-tighter">WICKET</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+        )}
       </div>
     );
   };
@@ -978,50 +1261,208 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
         {renderTabContent()}
       </div>
 
+      {/* Wicket Confirmation Modal */}
+      {wicketModal.isOpen && (
+         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+             <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden shadow-2xl animate-zoom-in">
+                 <div className="bg-red-600 p-6 text-center">
+                    <div className="w-16 h-16 bg-red-700 rounded-full flex items-center justify-center mx-auto mb-2 shadow-inner">
+                      <UserX size={32} className="text-white" />
+                    </div>
+                    <h3 className="text-2xl font-black text-white uppercase tracking-tight">Wicket Fall</h3>
+                 </div>
+                 
+                 <div className="p-6 space-y-4">
+                     <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Dismissal Type</label>
+                        <select 
+                           className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-800 outline-none focus:ring-2 focus:ring-red-500"
+                           value={wicketDetails.type}
+                           onChange={(e) => setWicketDetails({...wicketDetails, type: e.target.value})}
+                        >
+                            {DISMISSAL_TYPES.filter(t => t !== 'Not Out' && t !== 'Did not bat' && t !== 'Retired Hurt').map(t => (
+                                <option key={t} value={t}>{t}</option>
+                            ))}
+                        </select>
+                     </div>
+
+                     {['Caught', 'Run Out', 'Stumped'].includes(wicketDetails.type) && (
+                         <div>
+                            <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Fielder Name</label>
+                            <select 
+                               className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 outline-none focus:ring-2 focus:ring-red-500"
+                               value={wicketDetails.fielderName}
+                               onChange={(e) => setWicketDetails({...wicketDetails, fielderName: e.target.value})}
+                            >
+                                <option value="">Select Fielder...</option>
+                                {getBowlingTeamPlayers(activeTab === 0 ? 0 : activeTab === 1 ? 0 : 1).map(p => (
+                                    <option key={p.id} value={p.name}>{p.name}</option>
+                                ))}
+                            </select>
+                         </div>
+                     )}
+
+                     <div className="flex gap-3 pt-2">
+                        <button 
+                          onClick={() => setWicketModal({ isOpen: false, pendingData: null })}
+                          className="flex-1 py-3 text-slate-500 font-bold hover:bg-slate-50 rounded-xl"
+                        >
+                          Cancel
+                        </button>
+                        <button 
+                          onClick={handleConfirmWicket}
+                          className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-lg shadow-red-500/20"
+                        >
+                          Confirm Wicket
+                        </button>
+                     </div>
+                 </div>
+             </div>
+         </div>
+      )}
+
       {/* Player Selector Modal */}
       {playerSelector && (
          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-             <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
-                 <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                    <h3 className="font-bold text-slate-800">Select {playerSelector.type === 'batsman' ? 'Batsman' : 'Bowler'}</h3>
-                    <button onClick={() => setPlayerSelector(null)} className="text-slate-400 hover:text-slate-600"><X size={20}/></button>
-                 </div>
-                 <div className="p-4">
-                     <div className="relative mb-4">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-                        <input 
-                          autoFocus
-                          placeholder="Search player..."
-                          className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-slate-800"
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                        />
+             <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl transition-all duration-300">
+                 {!selectionPreview ? (
+                   // List View
+                   <>
+                     <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                        <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                            {playerSelector.autoTrigger && <Zap size={16} className="text-yellow-500 fill-yellow-500" />}
+                            Select {playerSelector.type === 'batsman' ? 'Batsman' : 'Bowler'}
+                        </h3>
+                        <button onClick={() => setPlayerSelector(null)} className="text-slate-400 hover:text-slate-600"><X size={20}/></button>
                      </div>
-                     <div className="max-h-64 overflow-y-auto space-y-1">
-                        {(() => {
-                            // Determine which list to show
-                            const isBatting = playerSelector.type === 'batsman';
-                            const candidates = isBatting 
-                                ? getBattingTeamPlayers(playerSelector.inningIdx) 
-                                : getBowlingTeamPlayers(playerSelector.inningIdx);
+                     <div className="p-4">
+                         <div className="relative mb-4">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                            <input 
+                              autoFocus
+                              placeholder="Search player..."
+                              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500 text-slate-800"
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                         </div>
+                         <div className="max-h-64 overflow-y-auto space-y-1">
+                            {(() => {
+                                const isBatting = playerSelector.type === 'batsman';
+                                // Filter players already in the list
+                                const currentList = isBatting 
+                                    ? data.innings[playerSelector.inningIdx].batting 
+                                    : data.innings[playerSelector.inningIdx].bowling;
+                                const currentIds = new Set(currentList.map(p => p.id));
 
-                            const filtered = candidates.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+                                const candidates = isBatting 
+                                    ? getBattingTeamPlayers(playerSelector.inningIdx) 
+                                    : getBowlingTeamPlayers(playerSelector.inningIdx);
 
-                            if (filtered.length === 0) return <p className="text-center text-slate-400 text-sm py-4">No players found.</p>;
+                                // Show only those NOT in the current scorecard
+                                const filtered = candidates
+                                    .filter(p => !currentIds.has(p.id))
+                                    .filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
 
-                            return filtered.map(p => (
-                               <button 
-                                 key={p.id}
-                                 onClick={() => handleAddPlayerFromModal(p)}
-                                 className="w-full flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg group transition-colors text-left"
-                               >
-                                  <span className="font-bold text-slate-700">{p.name}</span>
-                                  <Check size={16} className="text-blue-500 opacity-0 group-hover:opacity-100" />
-                               </button>
-                            ));
-                        })()}
+                                if (filtered.length === 0) return <p className="text-center text-slate-400 text-sm py-4">No available players found.</p>;
+
+                                return filtered.map(p => (
+                                   <button 
+                                     key={p.id}
+                                     onClick={() => handlePreviewPlayer(p)}
+                                     className="w-full flex items-center justify-between p-3 hover:bg-slate-50 rounded-lg group transition-colors text-left"
+                                   >
+                                      <div className="flex items-center gap-3">
+                                          <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-xs text-slate-500">
+                                              {p.name.slice(0, 2).toUpperCase()}
+                                          </div>
+                                          <span className="font-bold text-slate-700">{p.name}</span>
+                                      </div>
+                                      <ArrowRightLeft size={16} className="text-blue-500 opacity-0 group-hover:opacity-100" />
+                                   </button>
+                                ));
+                            })()}
+                         </div>
                      </div>
-                 </div>
+                   </>
+                 ) : (
+                   // Preview Card View
+                   <div className="relative">
+                      {/* Hero Header */}
+                      <div className="h-32 bg-slate-900 relative">
+                         <button 
+                           onClick={() => setSelectionPreview(null)}
+                           className="absolute top-4 left-4 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-sm transition-colors"
+                         >
+                            <ArrowRightLeft size={18} />
+                         </button>
+                         <button 
+                           onClick={() => setPlayerSelector(null)}
+                           className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full text-white backdrop-blur-sm transition-colors"
+                         >
+                            <X size={18} />
+                         </button>
+                         <div className="absolute -bottom-12 left-1/2 -translate-x-1/2">
+                            <img 
+                              src={selectionPreview.avatarUrl} 
+                              alt={selectionPreview.name}
+                              className="w-24 h-24 rounded-2xl border-4 border-white shadow-xl object-cover bg-slate-200"
+                            />
+                         </div>
+                      </div>
+                      
+                      {/* Stats Content */}
+                      <div className="pt-16 pb-6 px-6 text-center">
+                         <h3 className="text-xl font-black text-slate-800 mb-1">{selectionPreview.name}</h3>
+                         <div className="flex items-center justify-center gap-2 mb-6">
+                            <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-[10px] font-bold uppercase rounded">{selectionPreview.role || 'Player'}</span>
+                         </div>
+                         
+                         <div className="grid grid-cols-4 gap-2 mb-6">
+                            <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
+                               <p className="text-[10px] font-bold text-slate-400 uppercase">Mat</p>
+                               <p className="text-lg font-black text-slate-800">{selectionPreview.matchesPlayed}</p>
+                            </div>
+                            <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
+                               <p className="text-[10px] font-bold text-slate-400 uppercase">Runs</p>
+                               <p className="text-lg font-black text-slate-800">{selectionPreview.runsScored}</p>
+                            </div>
+                            <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
+                               <p className="text-[10px] font-bold text-slate-400 uppercase">Wkts</p>
+                               <p className="text-lg font-black text-slate-800">{selectionPreview.wicketsTaken}</p>
+                            </div>
+                            <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
+                               <p className="text-[10px] font-bold text-slate-400 uppercase">Avg</p>
+                               <p className="text-lg font-black text-slate-800">{selectionPreview.average}</p>
+                            </div>
+                         </div>
+                         
+                         <div className="space-y-3">
+                             {selectionPreview.battingStyle && (
+                                <div className="flex items-center justify-between text-xs px-2">
+                                   <span className="text-slate-500">Batting Style</span>
+                                   <span className="font-bold text-slate-800 flex items-center gap-1"><Sword size={12}/> {selectionPreview.battingStyle}</span>
+                                </div>
+                             )}
+                             {selectionPreview.bowlingStyle && (
+                                <div className="flex items-center justify-between text-xs px-2">
+                                   <span className="text-slate-500">Bowling Style</span>
+                                   <span className="font-bold text-slate-800 flex items-center gap-1"><CircleDot size={12}/> {selectionPreview.bowlingStyle}</span>
+                                </div>
+                             )}
+                         </div>
+
+                         <div className="mt-8">
+                            <button 
+                              onClick={handleAddPlayerFromPreview}
+                              className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2"
+                            >
+                               <Check size={18} /> Confirm {playerSelector.type === 'batsman' ? 'Batsman' : 'Bowler'}
+                            </button>
+                         </div>
+                      </div>
+                   </div>
+                 )}
              </div>
          </div>
       )}
