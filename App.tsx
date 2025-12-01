@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
@@ -91,7 +92,7 @@ const AppContent: React.FC<{
                 />
               } 
             />
-            <Route path="/scorecard" element={<Scorecard />} />
+            <Route path="/scorecard" element={<Scorecard opponents={opponents} players={players} />} />
             <Route path="*" element={<Navigate to="/match-day" replace />} />
           </Routes>
         </div>
