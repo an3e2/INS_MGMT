@@ -117,7 +117,7 @@ const MatchSchedule: React.FC<MatchScheduleProps> = ({ matches, opponents, onAdd
           </h3>
           <form onSubmit={handleSubmit} className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Tournament</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase mb-1">League / Tournament Name</label>
               <input 
                 required
                 name="tournament"
@@ -223,7 +223,7 @@ const MatchSchedule: React.FC<MatchScheduleProps> = ({ matches, opponents, onAdd
                   </div>
                 </div>
                 <button 
-                  onClick={() => navigate('/scorecard')}
+                  onClick={() => navigate('/scorecard', { state: { match } })}
                   className="w-full py-2 bg-slate-50 hover:bg-blue-50 text-slate-600 hover:text-blue-600 rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100"
                 >
                   Go to Scorecard <ArrowRight size={14} />
@@ -269,7 +269,7 @@ const MatchSchedule: React.FC<MatchScheduleProps> = ({ matches, opponents, onAdd
                 <div className="mt-4 pt-4 border-t border-slate-50 flex justify-between items-center">
                    <span className="text-slate-400 text-xs">{new Date(match.date).toLocaleDateString()}</span>
                    <button 
-                      onClick={() => navigate('/scorecard')}
+                      onClick={() => navigate('/scorecard', { state: { match } })}
                       className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1"
                     >
                       Scorecard <ArrowRight size={10} />

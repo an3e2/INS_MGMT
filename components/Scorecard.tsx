@@ -13,9 +13,11 @@ import {
   X,
   Save,
   Search,
-  Check
+  Check,
+  Calendar
 } from 'lucide-react';
-import { OpponentTeam, Player } from '../types';
+import { OpponentTeam, Player, Match } from '../types';
+import { useLocation } from 'react-router-dom';
 
 // --- Types ---
 
@@ -75,6 +77,7 @@ interface MatchInfo {
   matchResult: string;
   date: string;
   venue: string;
+  tournament: string;
 }
 
 interface ScorecardData {
@@ -96,9 +99,11 @@ interface LiveState {
 interface ScorecardProps {
   opponents?: OpponentTeam[];
   players?: Player[];
+  matches?: Match[];
 }
 
-const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [] }) => {
+const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], matches = [] }) => {
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState<0 | 1 | 2>(0);
   const [showSummary, setShowSummary] = useState(false);
   const [isLiveMode, setIsLiveMode] = useState(false);
@@ -119,7 +124,8 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [] }) =
       tossResult: '',
       matchResult: '',
       date: new Date().toISOString().split('T')[0],
-      venue: 'RCA-1'
+      venue: 'RCA-1',
+      tournament: ''
     },
     innings: [
       {
@@ -144,6 +150,38 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [] }) =
   });
 
   const [validation, setValidation] = useState<ValidationResult>({ isValid: true, errors: [] });
+
+  useEffect(() => {
+    // Check if a match was passed via navigation
+    if (location.state && location.state.match) {
+        loadMatchData(location.state.match);
+        setActiveTab(2); // Switch to Match Info tab
+    }
+  }, [location.state]);
+
+  const loadMatchData = (match: Match) => {
+    setData(prev => ({
+        ...prev,
+        matchInfo: {
+            ...prev.matchInfo,
+            teamAName: 'Indian Strikers',
+            teamBName: match.opponent,
+            venue: match.venue,
+            date: match.date,
+            tournament: match.tournament || '',
+        }
+    }));
+  };
+
+  const handleSelectScheduledMatch = (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const matchId = e.target.value;
+      if (!matchId) return;
+      
+      const match = matches.find(m => m.id === matchId);
+      if (match) {
+          loadMatchData(match);
+      }
+  };
 
   // Ground options RCA-1 to RCA-15
   const groundOptions = Array.from({ length: 15 }, (_, i) => `RCA-${i + 1}`);
@@ -446,8 +484,38 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [] }) =
             <Target size={24} className="text-blue-500" />
             Match Info
           </h3>
+          
+          {/* Match Selection Dropdown */}
+          <div className="bg-slate-100 p-4 rounded-xl border border-slate-200">
+             <label className="block text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-2">
+               <Calendar size={14} /> Select Scheduled Fixture (Auto-fill)
+             </label>
+             <select 
+               className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-800 font-medium"
+               onChange={handleSelectScheduledMatch}
+               defaultValue=""
+             >
+                <option value="" disabled>Select a match to score...</option>
+                {matches.filter(m => m.isUpcoming).map(m => (
+                    <option key={m.id} value={m.id}>
+                       VS {m.opponent} ({new Date(m.date).toLocaleDateString()}) - {m.tournament}
+                    </option>
+                ))}
+             </select>
+          </div>
+
           <div className="grid md:grid-cols-2 gap-6">
              <div className="space-y-4">
+               <div>
+                  <label className="block text-xs font-bold text-slate-600 uppercase mb-1">League / Tournament</label>
+                  <input 
+                    name="tournament"
+                    value={data.matchInfo.tournament}
+                    onChange={handleMatchInfoChange}
+                    placeholder="e.g. Winter Cup 2024"
+                    className="w-full p-3 bg-white border border-slate-200 rounded-xl font-bold text-slate-800"
+                  />
+               </div>
                <div>
                   <label className="block text-xs font-bold text-slate-600 uppercase mb-1">Team A (Batting 1st?)</label>
                   <input 
@@ -537,7 +605,7 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [] }) =
         <div className="flex justify-between items-end border-b border-slate-200 pb-4">
            <div>
              <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tight">{teamName}</h3>
-             <p className="text-slate-500 font-medium">Innings {inningIdx + 1}</p>
+             <p className="text-slate-500 font-medium">Innings {inningIdx + 1} {data.matchInfo.tournament && `• ${data.matchInfo.tournament}`}</p>
            </div>
            <div className="text-right">
               <span className="text-4xl font-black text-slate-800">{inning.totalRuns}/{inning.wickets}</span>

@@ -5,6 +5,7 @@ import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import PlayerList from './components/PlayerList';
 import MatchSchedule from './components/MatchSchedule';
+import AICoach from './components/AICoach';
 import MatchSelection from './components/MatchSelection';
 import FieldingMap from './components/FieldingMap';
 import OpponentTeams from './components/OpponentTeams';
@@ -92,7 +93,7 @@ const AppContent: React.FC<{
                 />
               } 
             />
-            <Route path="/scorecard" element={<Scorecard opponents={opponents} players={players} />} />
+            <Route path="/scorecard" element={<Scorecard opponents={opponents} players={players} matches={matches} />} />
             <Route path="*" element={<Navigate to="/match-day" replace />} />
           </Routes>
         </div>
