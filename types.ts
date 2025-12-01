@@ -67,13 +67,6 @@ export interface OpponentTeam {
   color?: string; 
 }
 
-export interface ChatMessage {
-  id: string;
-  sender: 'user' | 'ai';
-  text: string;
-  timestamp: number;
-}
-
 export interface FieldPosition {
   playerId: string;
   left: number; // Percentage 0-100
