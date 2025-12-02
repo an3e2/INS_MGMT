@@ -1,4 +1,3 @@
-
 import { Player, Match, PlayerRole, BattingStyle, BowlingStyle, OpponentTeam, FieldingStrategy } from '../types';
 
 const PLAYERS_KEY = 'indian_strikers_players';
@@ -6,9 +5,6 @@ const MATCHES_KEY = 'indian_strikers_matches';
 const OPPONENTS_KEY = 'indian_strikers_opponents';
 const STRATEGIES_KEY = 'indian_strikers_strategies';
 const TEAM_LOGO_KEY = 'indian_strikers_logo';
-
-// Robust default logo (Indian Strikers Shield) as a fallback if logo.png is missing
-export const FALLBACK_SHIELD_LOGO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1MTIgNTEyIj48ZGVmcz48bGluZWFyR3JhZGllbnQgaWQ9ImIiIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzFmMjkzNyIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iIzExMTgxYiIvPjwvbGluZWFyR3JhZGllbnQ+PGxpbmVhckdyYWRpZW50IGlkPSJhIiB4MT0iMCUiIHkxPSIwJSIgeDI9IjEwMCUiIHkyPSIxMDAlIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiMzYjgyZjYiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMxZDQwYWYiLz48L2xpbmVhckdyYWRpZW50PjwvZGVmcz48cGF0aCBkPSJNMjU2IDQ4MEMzOS4zIDM2Ni42IDAgMTUzLjMgMCA2NGg1MTJjMCA4OS4zLTM5LjMgMzAyLjYtMjU2IDQxNnoiIGZpbGw9InVybCgjYikiLz48cGF0aCBkPSJNMjU2IDQ1MEM2NSAzNTUgMzIgMTYwIDMyIDgwaDQ0OGMwIDgwLTMzIDI3NS0yMjQgMzcwWiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjZmZmIiBzdHJva2Utd2lkdGg9IjEwIiBvcGFjaXR5PSIwLjMiLz48cGF0aCBmaWxsPSJ1cmwoI2EpIiBkPSJNMjAwIDE4MGMwLTEwIDEwLTIwIDIwLTIwczIwIDEwIDIwIDIwLTEwIDIwLTIwIDIwLTIwLTEwLTIwLTIwem05MCAwYzAtMTAgMTAtMjAgMjAtMjBzMjAgMTAgMjAgMjAtMTAgMjAtMjAgMjAtMjAtMTAtMjAtMjB6Ii8+PHBhdGggZmlsbD0iI2ZmZiIgZD0iTTI1NiAzMzBsLTIwLTMwaDQwbC0yMCAzMHoiLz48dGV4dCB4PSI1MCUiIHk9IjM5MCIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWksIHNhbnMtc2VyaWYiIGZvbnQtd2VpZ2h0PSI5MDAiIGZvbnQtc2l6ZT0iNDgiIGxldHRlci1zcGFjaW5nPSIxIj5TVFJWS0VSUzwvdGV4dD48dGV4dCB4PSI1MCUiIHk9IjY1IiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjNjBhNWZhIiBmb250LWZhbWlseT0ic3lzdGVtLXVpLCBzYW5zLXNlcmlmIiBmb250LXdlaWdodD0iODAwIiBmb250LXNpemU9IjI0IiBsZXR0ZXItc3BhY2luZz0iMiI+SU5ESUFOPC90ZXh0Pjwvc3ZnPg==";
 
 const SEED_PLAYERS: Player[] = [
   {
@@ -373,7 +369,8 @@ export const saveStrategies = (strategies: FieldingStrategy[]) => {
 };
 
 export const getTeamLogo = (): string => {
-  return localStorage.getItem(TEAM_LOGO_KEY) || './logo.png';
+  // Return stored logo or empty string (which will trigger placeholder in UI)
+  return localStorage.getItem(TEAM_LOGO_KEY) || '';
 };
 
 export const saveTeamLogo = (url: string) => {

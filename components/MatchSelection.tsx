@@ -1,9 +1,7 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Player, PlayerRole, UserRole, Match } from '../types';
 import { Trophy, AlertTriangle, Lock, ArrowRight, ArrowLeft, Share2, Loader2, Calendar, MapPin, Sword, Shield, CircleDot, UserX } from 'lucide-react';
 import html2canvas from 'html2canvas';
-import { FALLBACK_SHIELD_LOGO } from '../services/storageService';
 
 interface MatchSelectionProps {
   players: Player[];
@@ -61,23 +59,13 @@ const MatchSelection: React.FC<MatchSelectionProps> = ({ players, userRole, matc
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isGenerating, setIsGenerating] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const [currentSrc, setCurrentSrc] = useState(teamLogo);
   const cardRef = useRef<HTMLDivElement>(null);
   
   const canEdit = userRole === 'admin';
 
   useEffect(() => {
-    setCurrentSrc(teamLogo);
     setImgError(false);
   }, [teamLogo]);
-
-  const handleImgError = () => {
-    if (currentSrc === teamLogo && teamLogo !== FALLBACK_SHIELD_LOGO) {
-      setCurrentSrc(FALLBACK_SHIELD_LOGO);
-    } else {
-      setImgError(true);
-    }
-  };
 
   // Find next match
   const nextMatch = matches
@@ -340,13 +328,13 @@ const MatchSelection: React.FC<MatchSelectionProps> = ({ players, userRole, matc
               <div className="relative z-10 p-8 flex justify-between items-start border-b border-white/10 bg-black/20 backdrop-blur-sm">
                   <div className="flex items-center gap-4">
                       <div className="w-20 h-20 bg-white/10 rounded-xl p-2 flex items-center justify-center backdrop-blur-md border border-white/20">
-                          {!imgError ? (
+                          {teamLogo && !imgError ? (
                             <img 
-                              src={currentSrc} 
+                              src={teamLogo} 
                               alt="Logo" 
                               className="w-full h-full object-contain drop-shadow-lg" 
-                              onError={handleImgError}
-                              crossOrigin={currentSrc.startsWith('data:') ? undefined : "anonymous"}
+                              onError={() => setImgError(true)}
+                              crossOrigin={teamLogo.startsWith('data:') ? undefined : "anonymous"}
                             />
                           ) : (
                             <Shield className="w-16 h-16 text-blue-400" />

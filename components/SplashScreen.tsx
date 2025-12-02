@@ -1,15 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
-import { Shield, Users, Ticket, ArrowRight, Lock, Loader2, Trophy, ChevronRight, X } from 'lucide-react';
+import { Shield, Users, Ticket, ArrowRight, Lock, Loader2, ChevronRight, X } from 'lucide-react';
 import { UserRole } from '../types';
-import { FALLBACK_SHIELD_LOGO } from '../services/storageService';
 
 interface SplashScreenProps {
   onComplete: (role: UserRole) => void;
   teamLogo?: string;
 }
 
-const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, teamLogo = 'logo.png' }) => {
+const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, teamLogo = '' }) => {
   // 0: Init, 1: Logo Reveal, 2: Text Reveal, 3: Buttons Reveal, 4: Auth Mode
   const [animationStep, setAnimationStep] = useState(0);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
@@ -17,20 +15,15 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, teamLogo = 'log
   const [error, setError] = useState('');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [imgError, setImgError] = useState(false);
-  const [currentSrc, setCurrentSrc] = useState(teamLogo);
+
+  // Loading Screen State
+  const [isAppLoading, setIsAppLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState('');
+  const [finalRole, setFinalRole] = useState<UserRole>('guest');
 
   useEffect(() => {
-    setCurrentSrc(teamLogo);
     setImgError(false);
   }, [teamLogo]);
-
-  const handleImgError = () => {
-    if (currentSrc === teamLogo && teamLogo !== FALLBACK_SHIELD_LOGO) {
-      setCurrentSrc(FALLBACK_SHIELD_LOGO);
-    } else {
-      setImgError(true);
-    }
-  };
 
   useEffect(() => {
     // Cinematic Sequence
@@ -42,9 +35,41 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, teamLogo = 'log
     return () => timers.forEach(t => clearTimeout(t));
   }, []);
 
+  // Typing Effect for Loading Screen
+  useEffect(() => {
+    if (isAppLoading) {
+      const fullText = "The Legacy of some Crackheads...";
+      let currentIndex = 0;
+      
+      // Initial delay before typing starts
+      const startDelay = setTimeout(() => {
+        const interval = setInterval(() => {
+          if (currentIndex <= fullText.length) {
+            setLoadingText(fullText.slice(0, currentIndex));
+            currentIndex++;
+          } else {
+            clearInterval(interval);
+            // Wait a moment after typing finishes before entering app
+            setTimeout(() => {
+              onComplete(finalRole);
+            }, 1000);
+          }
+        }, 100); // Typing speed
+        return () => clearInterval(interval);
+      }, 500);
+
+      return () => clearTimeout(startDelay);
+    }
+  }, [isAppLoading, finalRole, onComplete]);
+
+  const initiateAppEntry = (role: UserRole) => {
+    setFinalRole(role);
+    setIsAppLoading(true);
+  };
+
   const handleRoleSelect = (role: UserRole) => {
     if (role === 'guest') {
-      onComplete('guest');
+      initiateAppEntry('guest');
     } else {
       setSelectedRole(role);
       setError('');
@@ -69,14 +94,42 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, teamLogo = 'log
       
       // Demo Credentials
       if (selectedRole === 'admin' && password === 'admin123') {
-        onComplete('admin');
+        initiateAppEntry('admin');
       } else if (selectedRole === 'member' && password === 'member123') {
-        onComplete('member');
+        initiateAppEntry('member');
       } else {
         setError(`Incorrect password for ${selectedRole}.`);
       }
     }, 1000);
   };
+
+  if (isAppLoading) {
+    return (
+      <div className="fixed inset-0 z-50 bg-slate-950 flex flex-col items-center justify-center font-sans overflow-hidden">
+        {/* Simple Background for Loading */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-900/20 via-slate-950 to-black"></div>
+        
+        <div className="relative z-10 text-center px-4">
+           {/* Pulsing Logo */}
+           <div className="mb-8 flex justify-center">
+              <div className="w-20 h-20 rounded-xl flex items-center justify-center animate-pulse">
+                {teamLogo && !imgError ? (
+                  <img src={teamLogo} alt="Logo" className="w-full h-full object-contain opacity-50 grayscale" onError={() => setImgError(true)} />
+                ) : (
+                  <Shield size={60} className="text-slate-700" />
+                )}
+              </div>
+           </div>
+
+           {/* Typing Text */}
+           <h2 className="text-3xl md:text-5xl text-slate-300 font-cursive tracking-wide min-h-[60px]" style={{ fontFamily: '"Dancing Script", cursive' }}>
+              {loadingText}
+              <span className="animate-blink">|</span>
+           </h2>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900 flex flex-col items-center justify-center overflow-hidden font-sans">
@@ -96,36 +149,37 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, teamLogo = 'log
       {/* Main Content Container */}
       <div className="relative z-10 w-full max-w-5xl mx-auto px-6 flex flex-col items-center justify-center h-full">
         
-        {/* LOGO SECTION */}
+        {/* LOGO SECTION - Flex Col ensures strict horizontal centering */}
         <div className={`
-          transform transition-all duration-1000 ease-out flex flex-col items-center
+          transform transition-all duration-1000 ease-out flex flex-col items-center justify-center w-full
           ${animationStep >= 1 ? 'scale-100 opacity-100 translate-y-0' : 'scale-50 opacity-0 translate-y-10'}
           ${animationStep >= 3 ? '-translate-y-12 md:-translate-y-20' : ''} 
         `}>
-          <div className="relative">
-            {/* Logo Crest */}
-            <div className="w-32 h-32 md:w-40 md:h-40 bg-transparent rounded-2xl flex items-center justify-center mb-8 transform hover:scale-105 transition-transform duration-500 animate-zoom-in">
-              {!imgError ? (
+          <div className="relative flex justify-center mb-6 w-full">
+            {/* Logo Crest / Placeholder - Added mx-auto for extra safety */}
+            <div className={`
+                mx-auto w-32 h-32 md:w-40 md:h-40 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.5)] transform hover:scale-105 transition-transform duration-500 animate-zoom-in
+                ${teamLogo && !imgError ? 'bg-transparent' : 'bg-gradient-to-br from-blue-600 to-blue-800'}
+            `}>
+              {teamLogo && !imgError ? (
                 <img 
-                  src={currentSrc} 
+                  src={teamLogo} 
                   alt="Indian Strikers Logo" 
                   className="w-full h-full object-contain drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]"
-                  onError={handleImgError}
+                  onError={() => setImgError(true)}
                 />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.5)]">
-                   <Shield size={80} className="text-white" />
-                </div>
+                <Shield size={80} className="text-white" />
               )}
             </div>
           </div>
 
           {/* Title */}
-          <div className={`text-center transform transition-all duration-1000 delay-300 ${animationStep >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-            <h1 className="text-5xl md:text-7xl font-black text-white tracking-tight uppercase drop-shadow-2xl mb-2">
+          <div className={`text-center w-full transform transition-all duration-1000 delay-300 ${animationStep >= 2 ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
+            <h1 className="text-5xl md:text-7xl font-black text-white tracking-tight uppercase drop-shadow-2xl mb-2 text-center mx-auto">
               Indian <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-300">Strikers</span>
             </h1>
-            <p className="text-slate-400 text-sm md:text-lg uppercase tracking-[0.3em] font-medium">
+            <p className="text-slate-400 text-sm md:text-lg uppercase tracking-[0.3em] font-medium text-center">
               Official Team Management Portal
             </p>
           </div>

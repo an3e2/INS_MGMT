@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
@@ -16,7 +15,6 @@ import {
   Upload
 } from 'lucide-react';
 import { UserRole } from '../types';
-import { FALLBACK_SHIELD_LOGO } from '../services/storageService';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -29,23 +27,11 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, userRole = 'guest', onSignOut, teamLogo, onUpdateLogo }) => {
   const [imgError, setImgError] = useState(false);
-  const [currentSrc, setCurrentSrc] = useState(teamLogo);
   
-  // Sync prop with local state and reset error when prop changes
+  // Reset error state when prop changes
   useEffect(() => {
-    setCurrentSrc(teamLogo);
     setImgError(false);
   }, [teamLogo]);
-
-  const handleImgError = () => {
-    // If the primary logo failed and we haven't tried the fallback yet, try the fallback
-    if (currentSrc === teamLogo && teamLogo !== FALLBACK_SHIELD_LOGO) {
-      setCurrentSrc(FALLBACK_SHIELD_LOGO);
-    } else {
-      // If we are already on fallback or fallback failed, show icon
-      setImgError(true);
-    }
-  };
 
   // Order: Squad Roster, Opponent Teams, Matche Schedule, Match Selection, Fielding Map, Scorecard, and Match Day
   const links = [
@@ -91,15 +77,15 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, userRole = 'guest', o
         <div className="p-6 flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-2">
             <div className="relative group w-10 h-10 flex items-center justify-center">
-              {!imgError ? (
+              {teamLogo && !imgError ? (
                 <img 
-                  src={currentSrc} 
+                  src={teamLogo} 
                   alt="Logo" 
                   className="w-full h-full object-contain drop-shadow-lg" 
-                  onError={handleImgError}
+                  onError={() => setImgError(true)}
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center bg-blue-600 rounded-lg shadow-lg">
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg shadow-lg">
                   <Shield className="text-white w-6 h-6" />
                 </div>
               )}
