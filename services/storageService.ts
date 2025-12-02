@@ -1,10 +1,12 @@
-import { Player, Match, PlayerRole, BattingStyle, BowlingStyle, OpponentTeam, FieldingStrategy } from '../types';
+
+import { Player, Match, PlayerRole, BattingStyle, BowlingStyle, OpponentTeam, FieldingStrategy, TournamentTableEntry } from '../types';
 
 const PLAYERS_KEY = 'indian_strikers_players';
 const MATCHES_KEY = 'indian_strikers_matches';
 const OPPONENTS_KEY = 'indian_strikers_opponents';
 const STRATEGIES_KEY = 'indian_strikers_strategies';
 const TEAM_LOGO_KEY = 'indian_strikers_logo';
+const TOURNAMENT_TABLE_KEY = 'indian_strikers_tournament_table';
 
 const SEED_PLAYERS: Player[] = [
   {
@@ -316,6 +318,8 @@ const SEED_STRATEGIES: FieldingStrategy[] = [
   }
 ];
 
+const SEED_TABLE: TournamentTableEntry[] = [];
+
 export const getPlayers = (): Player[] => {
   const stored = localStorage.getItem(PLAYERS_KEY);
   if (!stored) {
@@ -380,4 +384,13 @@ export const saveTeamLogo = (url: string) => {
     console.error("Failed to save logo to storage (likely too large):", error);
     alert("Logo file is too large to save permanently, but it will be used for this session.");
   }
+};
+
+export const getTournamentTable = (): TournamentTableEntry[] => {
+  const stored = localStorage.getItem(TOURNAMENT_TABLE_KEY);
+  return stored ? JSON.parse(stored) : SEED_TABLE;
+};
+
+export const saveTournamentTable = (table: TournamentTableEntry[]) => {
+  localStorage.setItem(TOURNAMENT_TABLE_KEY, JSON.stringify(table));
 };

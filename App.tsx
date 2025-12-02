@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
@@ -8,6 +9,7 @@ import MatchSelection from './components/MatchSelection';
 import FieldingMap from './components/FieldingMap';
 import OpponentTeams from './components/OpponentTeams';
 import Scorecard from './components/Scorecard';
+import Memories from './components/Memories';
 import SplashScreen from './components/SplashScreen';
 import { Player, Match, UserRole, OpponentTeam } from './types';
 import { getPlayers, savePlayers, getMatches, saveMatches, getOpponents, saveOpponents, getTeamLogo, saveTeamLogo } from './services/storageService';
@@ -54,7 +56,7 @@ const AppContent: React.FC<{
 
         <div className="p-4 md:p-8 max-w-7xl mx-auto pb-24">
           <Routes>
-            <Route path="/match-day" element={<Dashboard players={players} matches={matches} />} />
+            <Route path="/home" element={<Dashboard players={players} matches={matches} />} />
             <Route 
               path="/roster" 
               element={
@@ -94,7 +96,8 @@ const AppContent: React.FC<{
               } 
             />
             <Route path="/scorecard" element={<Scorecard opponents={opponents} players={players} matches={matches} />} />
-            <Route path="*" element={<Navigate to="/match-day" replace />} />
+            <Route path="/memories" element={<Memories userRole={userRole} />} />
+            <Route path="*" element={<Navigate to="/home" replace />} />
           </Routes>
         </div>
       </main>

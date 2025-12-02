@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
@@ -12,7 +13,9 @@ import {
   User,
   Ticket,
   LogOut,
-  Upload
+  Upload,
+  Home,
+  Image
 } from 'lucide-react';
 import { UserRole } from '../types';
 
@@ -33,15 +36,16 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, userRole = 'guest', o
     setImgError(false);
   }, [teamLogo]);
 
-  // Order: Squad Roster, Opponent Teams, Matche Schedule, Match Selection, Fielding Map, Scorecard, and Match Day
+  // Order: Home (Match Day), Squad Roster, Opponent Teams, Match Schedule, Match Selection, Fielding Map, Scorecard, Memories
   const links = [
+    { to: '/home', icon: <Home size={20} />, label: 'Home' },
     { to: '/roster', icon: <Users size={20} />, label: 'Squad Roster' },
     { to: '/opponents', icon: <Swords size={20} />, label: 'Opponent Teams' },
     { to: '/matches', icon: <Calendar size={20} />, label: 'Matches' },
     { to: '/selection', icon: <ClipboardList size={20} />, label: 'Match Selection' },
     { to: '/fielding', icon: <Map size={20} />, label: 'Fielding Board' },
     { to: '/scorecard', icon: <Shield size={20} />, label: 'Scorecard' },
-    { to: '/match-day', icon: <LayoutDashboard size={20} />, label: 'Match Day' },
+    { to: '/memories', icon: <Image size={20} />, label: 'Memories' },
   ];
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -106,7 +110,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, userRole = 'guest', o
           </button>
         </div>
 
-        <nav className="mt-4 px-4 space-y-2 flex-1 overflow-y-auto">
+        <nav className="mt-4 px-4 space-y-2 flex-1 overflow-y-auto custom-scrollbar">
           {links.map((link) => (
             <NavLink
               key={link.to}

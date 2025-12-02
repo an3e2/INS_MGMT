@@ -116,3 +116,15 @@ export interface FieldingStrategy {
   batterId?: string;
   positions: FieldPosition[];
 }
+
+export interface TournamentTableEntry {
+  id: string;
+  teamId: string;
+  teamName: string;
+  matches: number;
+  won: number;
+  lost: number;
+  nr: number;
+  points: number;
+  nrr: string;
+}
