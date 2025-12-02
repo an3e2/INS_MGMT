@@ -289,9 +289,6 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, teamLogo = '' }
                       {error}
                     </div>
                   )}
-                  <p className="text-slate-600 text-[10px] mt-2 ml-1">
-                    Hint: Use <code className="bg-slate-800 px-1 py-0.5 rounded text-slate-400 font-mono">{selectedRole}123</code>
-                  </p>
                 </div>
 
                 <button 
@@ -306,7 +303,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, teamLogo = '' }
                     ${(!password || isAuthenticating) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'}
                   `}
                 >
-                  {isAuthenticating ? <Loader2 size={18} className="animate-spin" /> : 'Authenticate'}
+                  {isAuthenticating ? <Loader2 size={18} className="animate-spin" /> : 'Enter'}
                 </button>
               </form>
             </div>
