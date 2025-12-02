@@ -22,6 +22,37 @@ export enum BowlingStyle {
   NONE = 'None'
 }
 
+export interface BattingStats {
+  matches: number;
+  innings: number;
+  notOuts: number;
+  runs: number;
+  balls: number;
+  average: number;
+  strikeRate: number;
+  highestScore: string;
+  hundreds: number;
+  fifties: number;
+  ducks: number;
+  fours: number;
+  sixes: number;
+}
+
+export interface BowlingStats {
+  matches: number;
+  innings: number;
+  overs: number;
+  maidens: number;
+  runs: number;
+  wickets: number;
+  average: number;
+  economy: number;
+  strikeRate: number;
+  bestBowling: string;
+  fourWickets: number;
+  fiveWickets: number;
+}
+
 export interface Player {
   id: string;
   name: string;
@@ -36,6 +67,8 @@ export interface Player {
   isViceCaptain?: boolean;
   isAvailable?: boolean;
   avatarUrl?: string;
+  battingStats?: BattingStats;
+  bowlingStats?: BowlingStats;
 }
 
 export interface Match {
@@ -54,6 +87,7 @@ export interface Match {
 export interface OpponentPlayer {
   id: string;
   name: string;
+  role?: string;
 }
 
 export interface OpponentTeam {

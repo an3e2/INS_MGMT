@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Users, Ticket, ArrowRight, Lock, Loader2, Trophy, ChevronRight, X } from 'lucide-react';
 import { UserRole } from '../types';
+import { FALLBACK_SHIELD_LOGO } from '../services/storageService';
 
 interface SplashScreenProps {
   onComplete: (role: UserRole) => void;
@@ -16,6 +17,20 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, teamLogo = 'log
   const [error, setError] = useState('');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState(teamLogo);
+
+  useEffect(() => {
+    setCurrentSrc(teamLogo);
+    setImgError(false);
+  }, [teamLogo]);
+
+  const handleImgError = () => {
+    if (currentSrc === teamLogo && teamLogo !== FALLBACK_SHIELD_LOGO) {
+      setCurrentSrc(FALLBACK_SHIELD_LOGO);
+    } else {
+      setImgError(true);
+    }
+  };
 
   useEffect(() => {
     // Cinematic Sequence
@@ -92,10 +107,10 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, teamLogo = 'log
             <div className="w-32 h-32 md:w-40 md:h-40 bg-transparent rounded-2xl flex items-center justify-center mb-8 transform hover:scale-105 transition-transform duration-500 animate-zoom-in">
               {!imgError ? (
                 <img 
-                  src={teamLogo} 
+                  src={currentSrc} 
                   alt="Indian Strikers Logo" 
                   className="w-full h-full object-contain drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]"
-                  onError={() => setImgError(true)}
+                  onError={handleImgError}
                 />
               ) : (
                 <div className="w-full h-full bg-gradient-to-br from-blue-600 to-blue-800 rounded-2xl flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.5)]">

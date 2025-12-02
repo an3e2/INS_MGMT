@@ -169,6 +169,7 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
 
   // Animation State
   const [milestone, setMilestone] = useState<{ visible: boolean; data: MilestoneData | null }>({ visible: false, data: null });
+  const [boundaryAnim, setBoundaryAnim] = useState<number | null>(null);
 
   // History for Undo
   const [history, setHistory] = useState<HistoryState[]>([]);
@@ -510,8 +511,16 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
     else {
       striker.runs = Number(striker.runs || 0) + runs;
       striker.balls = Number(striker.balls || 0) + 1;
-      if (runs === 4) striker.fours = Number(striker.fours || 0) + 1;
-      if (runs === 6) striker.sixes = Number(striker.sixes || 0) + 1;
+      if (runs === 4) {
+         striker.fours = Number(striker.fours || 0) + 1;
+         setBoundaryAnim(4); 
+         setTimeout(() => setBoundaryAnim(null), 2500);
+      }
+      if (runs === 6) {
+         striker.sixes = Number(striker.sixes || 0) + 1;
+         setBoundaryAnim(6); 
+         setTimeout(() => setBoundaryAnim(null), 2500);
+      }
       bowler.runs = Number(bowler.runs || 0) + runs;
       description = runs === 0 ? "Dot Ball" : `${runs} Run${runs !== 1 ? 's' : ''}`;
     }
@@ -849,9 +858,9 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
                     </div>
                 </div>
 
-                <div className="w-full md:w-80 bg-slate-950/50 flex flex-col h-64 md:h-auto border-l border-slate-800">
+                <div className="w-full md:w-80 bg-slate-950/50 flex flex-col h-64 md:h-[450px] border-l border-slate-800 shrink-0">
                    <div className="p-3 bg-slate-900 border-b border-slate-800 text-xs font-bold text-slate-400 uppercase">Ball by Ball</div>
-                   <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar relative">
+                   <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar relative scroll-smooth">
                       {ballCommentary.filter(b => b.inning === inningIdx).length === 0 && <div className="text-center text-slate-600 text-xs mt-10">Match started...</div>}
                       {ballCommentary.filter(b => b.inning === inningIdx).map((ball, idx) => (
                           <div key={idx} className={`text-sm p-2 rounded-lg border ${ball.isWicket ? 'bg-red-900/20 border-red-800' : 'bg-slate-800/50 border-slate-700/50'}`}>
@@ -969,6 +978,22 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
             </table>
           </div>
         </div>
+
+        {/* Boundary Animation Overlay */}
+        {boundaryAnim && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
+                <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in"></div>
+                <div className="relative animate-zoom-in">
+                    <div className="text-[200px] font-black italic text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-orange-600 drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] transform -skew-x-12">
+                        {boundaryAnim}
+                    </div>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-yellow-500/30 rounded-full blur-[80px] animate-pulse"></div>
+                    <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-4xl font-black text-white uppercase tracking-[0.5em] animate-bounce">
+                        {boundaryAnim === 4 ? 'FOUR!' : 'SIX!'}
+                    </div>
+                </div>
+            </div>
+        )}
 
         {/* Milestone Overlay */}
         {milestone.visible && milestone.data && (
@@ -1182,4 +1207,3 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
 };
 
 export default Scorecard;
-    

@@ -1,7 +1,7 @@
 
 import React, { useState, useRef } from 'react';
-import { Player, PlayerRole, BattingStyle, BowlingStyle, UserRole } from '../types';
-import { Plus, Trash2, Edit2, Shield, Sword, CircleDot, X, Upload, Activity, Medal, UserCheck, UserX, Lock, AlertTriangle } from 'lucide-react';
+import { Player, PlayerRole, BattingStyle, BowlingStyle, UserRole, BattingStats, BowlingStats } from '../types';
+import { Plus, Trash2, Edit2, Shield, Sword, CircleDot, X, Upload, Activity, Medal, UserCheck, UserX, Lock, AlertTriangle, Search } from 'lucide-react';
 
 interface PlayerListProps {
   players: Player[];
@@ -11,11 +11,23 @@ interface PlayerListProps {
   onDeletePlayer: (id: string) => void;
 }
 
+const defaultBattingStats: BattingStats = {
+  matches: 0, innings: 0, notOuts: 0, runs: 0, balls: 0, average: 0, strikeRate: 0, highestScore: '0', hundreds: 0, fifties: 0, ducks: 0, fours: 0, sixes: 0
+};
+
+const defaultBowlingStats: BowlingStats = {
+  matches: 0, innings: 0, overs: 0, maidens: 0, runs: 0, wickets: 0, average: 0, economy: 0, strikeRate: 0, bestBowling: '0/0', fourWickets: 0, fiveWickets: 0
+};
+
 const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer, onUpdatePlayer, onDeletePlayer }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState<Player | null>(null);
   const [viewingPlayer, setViewingPlayer] = useState<Player | null>(null);
+  const [activeStatTab, setActiveStatTab] = useState<'batting' | 'bowling'>('batting');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeEditTab, setActiveEditTab] = useState<'general' | 'batting' | 'bowling'>('general');
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const canEdit = userRole === 'admin';
@@ -27,8 +39,14 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
     isCaptain: false,
     isViceCaptain: false,
     isAvailable: true,
-    avatarUrl: ''
+    avatarUrl: '',
+    battingStats: { ...defaultBattingStats },
+    bowlingStats: { ...defaultBowlingStats }
   });
+
+  const filteredPlayers = players.filter(p => 
+    p.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleOpenAdd = () => {
     setEditingPlayer(null);
@@ -43,8 +61,11 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
       runsScored: 0,
       wicketsTaken: 0,
       average: 0,
-      avatarUrl: `https://picsum.photos/200/200?random=${Date.now()}`
+      avatarUrl: `https://picsum.photos/200/200?random=${Date.now()}`,
+      battingStats: { ...defaultBattingStats },
+      bowlingStats: { ...defaultBowlingStats }
     });
+    setActiveEditTab('general');
     setIsModalOpen(true);
   };
 
@@ -52,7 +73,12 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
     e.stopPropagation();
     if (!canEdit) return;
     setEditingPlayer(player);
-    setFormData({ ...player });
+    setFormData({ 
+      ...player,
+      battingStats: player.battingStats || { ...defaultBattingStats },
+      bowlingStats: player.bowlingStats || { ...defaultBowlingStats }
+    });
+    setActiveEditTab('general');
     setIsModalOpen(true);
   };
 
@@ -72,6 +98,16 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
     }
   };
 
+  const handleStatChange = (type: 'batting' | 'bowling', field: keyof BattingStats | keyof BowlingStats, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [type === 'batting' ? 'battingStats' : 'bowlingStats']: {
+        ...(type === 'batting' ? prev.battingStats! : prev.bowlingStats!),
+        [field]: value
+      }
+    }));
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -86,20 +122,31 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.name && formData.role) {
+      // Auto-update summary stats from detailed stats
+      const batting = formData.battingStats || defaultBattingStats;
+      const bowling = formData.bowlingStats || defaultBowlingStats;
+      
+      const summaryMatches = Math.max(Number(batting.matches), Number(bowling.matches));
+      const summaryRuns = Number(batting.runs);
+      const summaryWickets = Number(bowling.wickets);
+      const summaryAvg = Number(batting.average);
+
       const playerData: Player = {
         id: editingPlayer ? editingPlayer.id : Date.now().toString(),
         name: formData.name,
         role: formData.role as PlayerRole,
         battingStyle: (formData.battingStyle as BattingStyle) || BattingStyle.RIGHT_HAND,
         bowlingStyle: (formData.bowlingStyle as BowlingStyle) || BowlingStyle.NONE,
-        matchesPlayed: Number(formData.matchesPlayed) || 0,
-        runsScored: Number(formData.runsScored) || 0,
-        wicketsTaken: Number(formData.wicketsTaken) || 0,
-        average: Number(formData.average) || 0,
+        matchesPlayed: summaryMatches,
+        runsScored: summaryRuns,
+        wicketsTaken: summaryWickets,
+        average: summaryAvg,
         isCaptain: !!formData.isCaptain,
         isViceCaptain: !!formData.isViceCaptain,
         isAvailable: formData.isAvailable !== undefined ? formData.isAvailable : true,
-        avatarUrl: formData.avatarUrl || `https://picsum.photos/200/200?random=${Date.now()}`
+        avatarUrl: formData.avatarUrl || `https://picsum.photos/200/200?random=${Date.now()}`,
+        battingStats: batting,
+        bowlingStats: bowling
       };
 
       if (editingPlayer) {
@@ -138,29 +185,43 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Squad Roster</h2>
           <p className="text-slate-500">
             {canEdit ? 'Manage players, stats, and availability' : 'View player profiles and stats'}
           </p>
         </div>
-        {canEdit && (
-          <button 
-            onClick={handleOpenAdd}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20 hover:scale-105"
-          >
-            <Plus size={20} />
-            Recruit Player
-          </button>
-        )}
+        <div className="flex items-center gap-2 w-full md:w-auto">
+          {canEdit && (
+            <button 
+              onClick={handleOpenAdd}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20 hover:scale-105"
+            >
+              <Plus size={20} />
+              Recruit Player
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="relative">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
+        <input 
+          type="text"
+          placeholder="Search players by name..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full pl-12 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-700 shadow-sm transition-all"
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {players.map((player) => (
+        {filteredPlayers.map((player) => (
           <div 
             key={player.id} 
-            onClick={() => setViewingPlayer(player)}
+            onClick={() => { setViewingPlayer(player); setActiveStatTab('batting'); }}
             className="group relative bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer"
           >
             {/* Header / Background */}
@@ -174,7 +235,7 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
                 )}
               </div>
               
-              {/* Quick Availability Toggle (Moved to Bottom Right) */}
+              {/* Quick Availability Toggle */}
               {canEdit && (
                 <button 
                   onClick={(e) => handleToggleAvailability(player, e)}
@@ -237,13 +298,18 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
             </div>
           </div>
         ))}
+        {filteredPlayers.length === 0 && (
+          <div className="col-span-full py-12 text-center text-slate-400">
+             No players found matching "{searchQuery}".
+          </div>
+        )}
       </div>
 
       {/* Add/Edit Modal */}
       {isModalOpen && canEdit && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl w-full max-w-2xl overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto">
-            <div className="bg-slate-900 p-6 flex justify-between items-center sticky top-0 z-10">
+          <div className="bg-white rounded-2xl w-full max-w-4xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
+            <div className="bg-slate-900 p-6 flex justify-between items-center shrink-0">
               <h3 className="text-xl font-bold text-white flex items-center gap-2">
                 {editingPlayer ? <Edit2 size={20} className="text-blue-400" /> : <Plus size={20} className="text-blue-400" />}
                 {editingPlayer ? 'Edit Player Profile' : 'New Signing'}
@@ -251,104 +317,136 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white transition-colors"><X size={24} /></button>
             </div>
             
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
-              {/* Profile Image & Status */}
-              <div className="flex items-center gap-6 pb-6 border-b border-slate-100">
-                <div 
-                  className="relative w-24 h-24 rounded-full bg-slate-800 border-4 border-slate-700 shadow-inner flex items-center justify-center overflow-hidden cursor-pointer group"
-                  onClick={() => fileInputRef.current?.click()}
+            <div className="flex border-b border-slate-200">
+                <button 
+                  onClick={() => setActiveEditTab('general')}
+                  className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${activeEditTab === 'general' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
                 >
-                  {formData.avatarUrl ? (
-                    <img src={formData.avatarUrl} alt="Preview" className="w-full h-full object-cover" />
-                  ) : (
-                    <UserCheck size={32} className="text-slate-500" />
-                  )}
-                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Upload size={20} className="text-white" />
-                  </div>
-                  <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    className="hidden" 
-                    accept="image/*"
-                    onChange={handleFileChange} 
-                  />
-                </div>
-                <div className="flex-1 space-y-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Full Name</label>
-                    <input 
-                      required 
-                      name="name" 
-                      value={formData.name || ''} 
-                      onChange={handleInputChange} 
-                      className="w-full p-2 border-b-2 border-slate-200 focus:border-blue-500 outline-none font-bold text-xl bg-transparent placeholder-slate-300 text-slate-800" 
-                      placeholder="Player Name" 
-                    />
-                  </div>
-                </div>
-              </div>
+                  General Info
+                </button>
+                <button 
+                  onClick={() => setActiveEditTab('batting')}
+                  className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${activeEditTab === 'batting' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
+                >
+                  Batting Statistics
+                </button>
+                <button 
+                  onClick={() => setActiveEditTab('bowling')}
+                  className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${activeEditTab === 'bowling' ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
+                >
+                  Bowling Statistics
+                </button>
+            </div>
 
-              {/* Roles & Styles */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
-                  <select name="role" value={formData.role} onChange={handleInputChange} className="w-full p-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
-                    {Object.values(PlayerRole).map(role => <option key={role} value={role}>{role}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Batting Style</label>
-                  <select name="battingStyle" value={formData.battingStyle} onChange={handleInputChange} className="w-full p-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
-                    {Object.values(BattingStyle).map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Bowling Style</label>
-                  <select name="bowlingStyle" value={formData.bowlingStyle} onChange={handleInputChange} className="w-full p-2.5 bg-slate-800 border border-slate-700 text-white rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
-                    {Object.values(BowlingStyle).map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
-                </div>
-              </div>
+            <form onSubmit={handleSubmit} className="overflow-y-auto p-6 space-y-6 flex-1">
+              
+              {activeEditTab === 'general' && (
+                <div className="space-y-6 animate-fade-in">
+                  <div className="flex items-center gap-6 pb-6 border-b border-slate-100">
+                    <div 
+                      className="relative w-24 h-24 rounded-full bg-slate-800 border-4 border-slate-700 shadow-inner flex items-center justify-center overflow-hidden cursor-pointer group"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      {formData.avatarUrl ? (
+                        <img src={formData.avatarUrl} alt="Preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <UserCheck size={32} className="text-slate-500" />
+                      )}
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Upload size={20} className="text-white" />
+                      </div>
+                      <input 
+                        type="file" 
+                        ref={fileInputRef} 
+                        className="hidden" 
+                        accept="image/*"
+                        onChange={handleFileChange} 
+                      />
+                    </div>
+                    <div className="flex-1 space-y-4">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Full Name</label>
+                        <input 
+                          required 
+                          name="name" 
+                          value={formData.name || ''} 
+                          onChange={handleInputChange} 
+                          className="w-full p-2 border-b-2 border-slate-200 focus:border-blue-500 outline-none font-bold text-xl bg-transparent placeholder-slate-300 text-slate-800" 
+                          placeholder="Player Name" 
+                        />
+                      </div>
+                    </div>
+                  </div>
 
-              {/* Leadership */}
-              <div className="flex gap-6 p-4 bg-slate-50 rounded-xl">
-                 <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" name="isCaptain" checked={formData.isCaptain} onChange={handleInputChange} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500" />
-                    <span className="text-sm font-semibold text-slate-700">Team Captain</span>
-                 </label>
-                 <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" name="isViceCaptain" checked={formData.isViceCaptain} onChange={handleInputChange} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500" />
-                    <span className="text-sm font-semibold text-slate-700">Vice Captain</span>
-                 </label>
-              </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Role</label>
+                      <select name="role" value={formData.role} onChange={handleInputChange} className="w-full p-2.5 bg-slate-100 border border-slate-200 text-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                        {Object.values(PlayerRole).map(role => <option key={role} value={role}>{role}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Batting Style</label>
+                      <select name="battingStyle" value={formData.battingStyle} onChange={handleInputChange} className="w-full p-2.5 bg-slate-100 border border-slate-200 text-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                        {Object.values(BattingStyle).map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-1">Bowling Style</label>
+                      <select name="bowlingStyle" value={formData.bowlingStyle} onChange={handleInputChange} className="w-full p-2.5 bg-slate-100 border border-slate-200 text-slate-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                        {Object.values(BowlingStyle).map(s => <option key={s} value={s}>{s}</option>)}
+                      </select>
+                    </div>
+                  </div>
 
-              {/* Stats Manual Entry */}
-              <div>
-                <h4 className="text-sm font-bold text-slate-800 uppercase mb-3 flex items-center gap-2">
-                  <Activity size={16} /> Legacy Stats
-                </h4>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Matches</label>
-                    <input type="number" name="matchesPlayed" value={formData.matchesPlayed} onChange={handleInputChange} className="w-full p-2 bg-slate-800 border border-slate-700 text-white rounded-lg outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Runs</label>
-                    <input type="number" name="runsScored" value={formData.runsScored} onChange={handleInputChange} className="w-full p-2 bg-slate-800 border border-slate-700 text-white rounded-lg outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Wickets</label>
-                    <input type="number" name="wicketsTaken" value={formData.wicketsTaken} onChange={handleInputChange} className="w-full p-2 bg-slate-800 border border-slate-700 text-white rounded-lg outline-none" />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Average</label>
-                    <input type="number" step="0.01" name="average" value={formData.average} onChange={handleInputChange} className="w-full p-2 bg-slate-800 border border-slate-700 text-white rounded-lg outline-none" />
+                  <div className="flex gap-6 p-4 bg-slate-50 rounded-xl border border-slate-100">
+                     <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="isCaptain" checked={formData.isCaptain} onChange={handleInputChange} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500" />
+                        <span className="text-sm font-semibold text-slate-700">Team Captain</span>
+                     </label>
+                     <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="isViceCaptain" checked={formData.isViceCaptain} onChange={handleInputChange} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500" />
+                        <span className="text-sm font-semibold text-slate-700">Vice Captain</span>
+                     </label>
                   </div>
                 </div>
-              </div>
+              )}
 
-              <div className="pt-6 flex justify-between gap-3 border-t border-slate-100">
+              {activeEditTab === 'batting' && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in">
+                   {Object.keys(defaultBattingStats).map((key) => (
+                     <div key={key}>
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{key.replace(/([A-Z])/g, ' $1').trim()}</label>
+                        <input 
+                           type={key === 'highestScore' ? 'text' : 'number'}
+                           step={key === 'average' || key === 'strikeRate' ? '0.01' : '1'}
+                           value={formData.battingStats ? (formData.battingStats as any)[key] : ''}
+                           onChange={(e) => handleStatChange('batting', key as keyof BattingStats, e.target.value)}
+                           className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500"
+                        />
+                     </div>
+                   ))}
+                </div>
+              )}
+
+              {activeEditTab === 'bowling' && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 animate-fade-in">
+                   {Object.keys(defaultBowlingStats).map((key) => (
+                     <div key={key}>
+                        <label className="block text-xs font-bold text-slate-500 uppercase mb-1">{key.replace(/([A-Z])/g, ' $1').trim()}</label>
+                        <input 
+                           type={key === 'bestBowling' ? 'text' : 'number'}
+                           step={key === 'average' || key === 'economy' || key === 'strikeRate' ? '0.01' : '1'}
+                           value={formData.bowlingStats ? (formData.bowlingStats as any)[key] : ''}
+                           onChange={(e) => handleStatChange('bowling', key as keyof BowlingStats, e.target.value)}
+                           className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-orange-500"
+                        />
+                     </div>
+                   ))}
+                </div>
+              )}
+
+              <div className="pt-6 flex justify-between gap-3 border-t border-slate-100 mt-auto">
                 <div>
                    {editingPlayer && (
                     <button 
@@ -408,7 +506,7 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
       {/* Player Profile Modal */}
       {viewingPlayer && (
          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-           <div className="bg-white rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl relative">
+           <div className="bg-white rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl relative max-h-[90vh] flex flex-col">
               <button 
                 onClick={() => setViewingPlayer(null)} 
                 className="absolute top-4 right-4 z-10 p-2 bg-black/20 hover:bg-black/40 rounded-full text-white backdrop-blur-md transition-colors"
@@ -417,7 +515,7 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
               </button>
 
               {/* Hero Section */}
-              <div className="relative h-48 bg-gradient-to-r from-slate-900 via-slate-800 to-blue-900">
+              <div className="relative h-48 bg-gradient-to-r from-slate-900 via-slate-800 to-blue-900 shrink-0">
                  <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
                  <div className="absolute -bottom-16 left-8">
                     <img 
@@ -441,67 +539,136 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
               </div>
 
               {/* Content */}
-              <div className="pt-20 p-8">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    {/* Stats */}
-                    <div className="space-y-6">
-                       <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                         <Activity className="text-blue-500" /> Career Statistics
-                       </h3>
-                       <div className="grid grid-cols-2 gap-4">
-                          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                             <div className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Matches</div>
-                             <div className="text-2xl font-black text-slate-800">{viewingPlayer.matchesPlayed}</div>
-                          </div>
-                          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                             <div className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Runs</div>
-                             <div className="text-2xl font-black text-slate-800">{viewingPlayer.runsScored}</div>
-                          </div>
-                          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                             <div className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Wickets</div>
-                             <div className="text-2xl font-black text-slate-800">{viewingPlayer.wicketsTaken}</div>
-                          </div>
-                          <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
-                             <div className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Average</div>
-                             <div className="text-2xl font-black text-slate-800">{viewingPlayer.average}</div>
-                          </div>
-                       </div>
-                    </div>
+              <div className="pt-20 p-8 flex-1 overflow-y-auto">
+                 {/* Detailed Stats Section */}
+                 <div className="mb-8">
+                     <div className="flex gap-4 mb-4">
+                        <button 
+                          onClick={() => setActiveStatTab('batting')}
+                          className={`px-6 py-2 rounded-full font-bold text-sm transition-all border ${activeStatTab === 'batting' ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-500/30' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
+                        >
+                          BATTING STATISTICS
+                        </button>
+                        <button 
+                           onClick={() => setActiveStatTab('bowling')}
+                           className={`px-6 py-2 rounded-full font-bold text-sm transition-all border ${activeStatTab === 'bowling' ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-500/30' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
+                        >
+                           BOWLING STATISTICS
+                        </button>
+                     </div>
 
-                    {/* Info */}
-                    <div className="space-y-6">
-                       <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                         <UserCheck className="text-emerald-500" /> Player Profile
-                       </h3>
-                       <div className="space-y-4">
-                          <div className="flex justify-between py-2 border-b border-slate-100">
-                             <span className="text-slate-500">Batting Style</span>
-                             <span className="font-medium text-slate-900">{viewingPlayer.battingStyle}</span>
-                          </div>
-                          <div className="flex justify-between py-2 border-b border-slate-100">
-                             <span className="text-slate-500">Bowling Style</span>
-                             <span className="font-medium text-slate-900">{viewingPlayer.bowlingStyle}</span>
-                          </div>
-                          <div className="flex justify-between py-2 border-b border-slate-100">
-                             <span className="text-slate-500">Status</span>
-                             <span className={`font-bold px-2 py-0.5 rounded-md ${viewingPlayer.isAvailable ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                               {viewingPlayer.isAvailable ? 'Available for Selection' : 'Unavailable / Injured'}
-                             </span>
-                          </div>
-                       </div>
-                       
-                       {canEdit && (
-                         <div className="mt-6 pt-4">
-                           <button 
-                             onClick={(e) => { handleOpenEdit(viewingPlayer, e); setViewingPlayer(null); }}
-                             className="w-full py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
-                           >
-                             <Edit2 size={18} /> Edit Profile & Stats
-                           </button>
-                         </div>
-                       )}
-                    </div>
+                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                        <div className="overflow-x-auto">
+                           {activeStatTab === 'batting' ? (
+                             <table className="w-full text-sm text-left">
+                               <thead className="bg-[#00703c] text-white font-bold text-xs uppercase">
+                                 <tr>
+                                   <th className="p-3">Mat</th>
+                                   <th className="p-3">Inns</th>
+                                   <th className="p-3">NO</th>
+                                   <th className="p-3">Runs</th>
+                                   <th className="p-3">Balls</th>
+                                   <th className="p-3">Ave</th>
+                                   <th className="p-3">SR</th>
+                                   <th className="p-3">HS</th>
+                                   <th className="p-3">100's</th>
+                                   <th className="p-3">50's</th>
+                                   <th className="p-3">0's</th>
+                                   <th className="p-3">4's</th>
+                                   <th className="p-3">6's</th>
+                                 </tr>
+                               </thead>
+                               <tbody>
+                                 <tr className="border-b border-slate-100 hover:bg-slate-50 text-slate-700 font-medium">
+                                   <td className="p-3">{viewingPlayer.battingStats?.matches || '-'}</td>
+                                   <td className="p-3">{viewingPlayer.battingStats?.innings || '-'}</td>
+                                   <td className="p-3">{viewingPlayer.battingStats?.notOuts || '-'}</td>
+                                   <td className="p-3 font-bold">{viewingPlayer.battingStats?.runs || '-'}</td>
+                                   <td className="p-3">{viewingPlayer.battingStats?.balls || '-'}</td>
+                                   <td className="p-3">{viewingPlayer.battingStats?.average || '-'}</td>
+                                   <td className="p-3">{viewingPlayer.battingStats?.strikeRate || '-'}</td>
+                                   <td className="p-3">{viewingPlayer.battingStats?.highestScore || '-'}</td>
+                                   <td className="p-3">{viewingPlayer.battingStats?.hundreds || '-'}</td>
+                                   <td className="p-3">{viewingPlayer.battingStats?.fifties || '-'}</td>
+                                   <td className="p-3">{viewingPlayer.battingStats?.ducks || '-'}</td>
+                                   <td className="p-3">{viewingPlayer.battingStats?.fours || '-'}</td>
+                                   <td className="p-3">{viewingPlayer.battingStats?.sixes || '-'}</td>
+                                 </tr>
+                               </tbody>
+                             </table>
+                           ) : (
+                             <table className="w-full text-sm text-left">
+                               <thead className="bg-[#00703c] text-white font-bold text-xs uppercase">
+                                 <tr>
+                                   <th className="p-3">Mat</th>
+                                   <th className="p-3">Inns</th>
+                                   <th className="p-3">Overs</th>
+                                   <th className="p-3">Mdns</th>
+                                   <th className="p-3">Runs</th>
+                                   <th className="p-3">Wkts</th>
+                                   <th className="p-3">Ave</th>
+                                   <th className="p-3">Econ</th>
+                                   <th className="p-3">SR</th>
+                                   <th className="p-3">BBI</th>
+                                   <th className="p-3">4W</th>
+                                   <th className="p-3">5W</th>
+                                 </tr>
+                               </thead>
+                               <tbody>
+                                 <tr className="border-b border-slate-100 hover:bg-slate-50 text-slate-700 font-medium">
+                                   <td className="p-3">{viewingPlayer.bowlingStats?.matches || '-'}</td>
+                                   <td className="p-3">{viewingPlayer.bowlingStats?.innings || '-'}</td>
+                                   <td className="p-3">{viewingPlayer.bowlingStats?.overs || '-'}</td>
+                                   <td className="p-3">{viewingPlayer.bowlingStats?.maidens || '-'}</td>
+                                   <td className="p-3">{viewingPlayer.bowlingStats?.runs || '-'}</td>
+                                   <td className="p-3 font-bold">{viewingPlayer.bowlingStats?.wickets || '-'}</td>
+                                   <td className="p-3">{viewingPlayer.bowlingStats?.average || '-'}</td>
+                                   <td className="p-3">{viewingPlayer.bowlingStats?.economy || '-'}</td>
+                                   <td className="p-3">{viewingPlayer.bowlingStats?.strikeRate || '-'}</td>
+                                   <td className="p-3">{viewingPlayer.bowlingStats?.bestBowling || '-'}</td>
+                                   <td className="p-3">{viewingPlayer.bowlingStats?.fourWickets || '-'}</td>
+                                   <td className="p-3">{viewingPlayer.bowlingStats?.fiveWickets || '-'}</td>
+                                 </tr>
+                               </tbody>
+                             </table>
+                           )}
+                        </div>
+                     </div>
                  </div>
+
+                 {/* Basic Info Block */}
+                 <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                     <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                       <UserCheck className="text-blue-500" /> Additional Details
+                     </h3>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="flex justify-between py-2 border-b border-slate-200">
+                           <span className="text-slate-500">Batting Style</span>
+                           <span className="font-bold text-slate-900">{viewingPlayer.battingStyle}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b border-slate-200">
+                           <span className="text-slate-500">Bowling Style</span>
+                           <span className="font-bold text-slate-900">{viewingPlayer.bowlingStyle}</span>
+                        </div>
+                        <div className="flex justify-between py-2 border-b border-slate-200">
+                           <span className="text-slate-500">Status</span>
+                           <span className={`font-bold px-2 py-0.5 rounded-md ${viewingPlayer.isAvailable ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                             {viewingPlayer.isAvailable ? 'Available' : 'Unavailable'}
+                           </span>
+                        </div>
+                     </div>
+                 </div>
+                 
+                 {canEdit && (
+                   <div className="mt-8 flex justify-end">
+                     <button 
+                       onClick={(e) => { handleOpenEdit(viewingPlayer, e); setViewingPlayer(null); }}
+                       className="px-6 py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition-colors flex items-center gap-2"
+                     >
+                       <Edit2 size={18} /> Edit Full Profile
+                     </button>
+                   </div>
+                 )}
               </div>
            </div>
          </div>

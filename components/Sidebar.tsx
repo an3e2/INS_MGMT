@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   Users, 
@@ -16,6 +16,7 @@ import {
   Upload
 } from 'lucide-react';
 import { UserRole } from '../types';
+import { FALLBACK_SHIELD_LOGO } from '../services/storageService';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -28,7 +29,24 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, userRole = 'guest', onSignOut, teamLogo, onUpdateLogo }) => {
   const [imgError, setImgError] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState(teamLogo);
   
+  // Sync prop with local state and reset error when prop changes
+  useEffect(() => {
+    setCurrentSrc(teamLogo);
+    setImgError(false);
+  }, [teamLogo]);
+
+  const handleImgError = () => {
+    // If the primary logo failed and we haven't tried the fallback yet, try the fallback
+    if (currentSrc === teamLogo && teamLogo !== FALLBACK_SHIELD_LOGO) {
+      setCurrentSrc(FALLBACK_SHIELD_LOGO);
+    } else {
+      // If we are already on fallback or fallback failed, show icon
+      setImgError(true);
+    }
+  };
+
   // Order: Squad Roster, Opponent Teams, Matche Schedule, Match Selection, Fielding Map, Scorecard, and Match Day
   const links = [
     { to: '/roster', icon: <Users size={20} />, label: 'Squad Roster' },
@@ -49,6 +67,8 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, userRole = 'guest', o
         setImgError(false); // Reset error state on new upload
       };
       reader.readAsDataURL(file);
+      // Reset value so same file can be selected again
+      e.target.value = '';
     }
   };
 
@@ -73,10 +93,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, userRole = 'guest', o
             <div className="relative group w-10 h-10 flex items-center justify-center">
               {!imgError ? (
                 <img 
-                  src={teamLogo} 
+                  src={currentSrc} 
                   alt="Logo" 
                   className="w-full h-full object-contain drop-shadow-lg" 
-                  onError={() => setImgError(true)}
+                  onError={handleImgError}
                 />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-blue-600 rounded-lg shadow-lg">

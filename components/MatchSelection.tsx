@@ -1,14 +1,15 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Player, PlayerRole, UserRole, Match } from '../types';
-import { Trophy, AlertTriangle, Lock, ArrowRight, ArrowLeft, Share2, Loader2, Calendar, MapPin, Sword, Shield, CircleDot } from 'lucide-react';
+import { Trophy, AlertTriangle, Lock, ArrowRight, ArrowLeft, Share2, Loader2, Calendar, MapPin, Sword, Shield, CircleDot, UserX } from 'lucide-react';
 import html2canvas from 'html2canvas';
-import { getTeamLogo } from '../services/storageService';
+import { FALLBACK_SHIELD_LOGO } from '../services/storageService';
 
 interface MatchSelectionProps {
   players: Player[];
   userRole: UserRole;
   matches: Match[];
+  teamLogo: string;
 }
 
 interface PlayerCardProps {
@@ -22,10 +23,13 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ player, isSelected, onToggle, c
   <div 
     onClick={() => onToggle(player.id)}
     className={`
-      relative p-3 rounded-xl border flex items-center gap-3 transition-all cursor-pointer group hover:scale-[1.02]
+      relative p-3 rounded-xl border flex items-center gap-3 transition-all group
+      ${!player.isAvailable && !isSelected 
+        ? 'bg-slate-50 border-slate-100 opacity-60 cursor-not-allowed grayscale' 
+        : 'cursor-pointer hover:scale-[1.02]'}
       ${isSelected 
         ? 'bg-blue-600 border-blue-500 text-white shadow-lg shadow-blue-500/20' 
-        : 'bg-white border-slate-100 hover:border-blue-300 hover:bg-blue-50 text-slate-800 shadow-sm'}
+        : player.isAvailable ? 'bg-white border-slate-100 hover:border-blue-300 hover:bg-blue-50 text-slate-800 shadow-sm' : 'text-slate-400'}
       ${!canEdit ? 'pointer-events-none' : ''}
     `}
   >
@@ -33,10 +37,11 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ player, isSelected, onToggle, c
       <img 
         src={player.avatarUrl} 
         alt={player.name} 
-        className={`w-10 h-10 rounded-full object-cover ${!isSelected && !player.isAvailable ? 'grayscale opacity-60' : ''}`} 
+        className={`w-10 h-10 rounded-full object-cover ${!player.isAvailable ? 'grayscale opacity-80' : ''}`} 
       />
       {player.isCaptain && <span className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full border-2 border-white text-[10px] flex items-center justify-center font-bold text-slate-900">C</span>}
       {player.isViceCaptain && <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-400 rounded-full border-2 border-white text-[10px] flex items-center justify-center font-bold text-white">V</span>}
+      {!player.isAvailable && !isSelected && <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white text-[10px] flex items-center justify-center text-white"><UserX size={10} /></span>}
     </div>
     <div className="flex-1 min-w-0">
       <h4 className="font-bold text-sm truncate">{player.name}</h4>
@@ -44,7 +49,7 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ player, isSelected, onToggle, c
         {player.role}
       </p>
     </div>
-    {canEdit && (
+    {canEdit && player.isAvailable && (
       <div className={`p-1 rounded-full ${isSelected ? 'bg-white/20' : 'bg-slate-100 group-hover:bg-blue-200'}`}>
           {isSelected ? <ArrowLeft size={14} /> : <ArrowRight size={14} />}
       </div>
@@ -52,14 +57,27 @@ const PlayerCard: React.FC<PlayerCardProps> = ({ player, isSelected, onToggle, c
   </div>
 );
 
-const MatchSelection: React.FC<MatchSelectionProps> = ({ players, userRole, matches }) => {
+const MatchSelection: React.FC<MatchSelectionProps> = ({ players, userRole, matches, teamLogo }) => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isGenerating, setIsGenerating] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState(teamLogo);
   const cardRef = useRef<HTMLDivElement>(null);
   
   const canEdit = userRole === 'admin';
-  const teamLogo = getTeamLogo();
+
+  useEffect(() => {
+    setCurrentSrc(teamLogo);
+    setImgError(false);
+  }, [teamLogo]);
+
+  const handleImgError = () => {
+    if (currentSrc === teamLogo && teamLogo !== FALLBACK_SHIELD_LOGO) {
+      setCurrentSrc(FALLBACK_SHIELD_LOGO);
+    } else {
+      setImgError(true);
+    }
+  };
 
   // Find next match
   const nextMatch = matches
@@ -68,6 +86,14 @@ const MatchSelection: React.FC<MatchSelectionProps> = ({ players, userRole, matc
 
   const toggleSelection = (id: string) => {
     if (!canEdit) return;
+    
+    // Check if player is available
+    const player = players.find(p => p.id === id);
+    if (player && !player.isAvailable && !selectedIds.has(id)) {
+        // Do not allow selection if unavailable
+        return;
+    }
+
     const newSelection = new Set(selectedIds);
     if (newSelection.has(id)) {
       newSelection.delete(id);
@@ -316,11 +342,11 @@ const MatchSelection: React.FC<MatchSelectionProps> = ({ players, userRole, matc
                       <div className="w-20 h-20 bg-white/10 rounded-xl p-2 flex items-center justify-center backdrop-blur-md border border-white/20">
                           {!imgError ? (
                             <img 
-                              src={teamLogo} 
+                              src={currentSrc} 
                               alt="Logo" 
                               className="w-full h-full object-contain drop-shadow-lg" 
-                              onError={() => setImgError(true)}
-                              crossOrigin="anonymous"
+                              onError={handleImgError}
+                              crossOrigin={currentSrc.startsWith('data:') ? undefined : "anonymous"}
                             />
                           ) : (
                             <Shield className="w-16 h-16 text-blue-400" />
