@@ -44,6 +44,7 @@ const AppContent: React.FC<{
         onSignOut={onSignOut}
         teamLogo={teamLogo}
         onUpdateLogo={onUpdateLogo}
+        matches={matches}
       />
       
       <main className="flex-1 min-w-0 transition-all duration-300 relative h-screen overflow-y-auto">

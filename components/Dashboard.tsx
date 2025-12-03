@@ -199,89 +199,7 @@ const Dashboard: React.FC<DashboardProps> = ({ players, matches }) => {
         </div>
       </div>
       
-      {/* 3. Top Stats (Full Width) */}
-      <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg border border-slate-100 p-4 md:p-6 overflow-hidden relative">
-           <div className="absolute top-0 right-0 p-4 opacity-5"><Target size={120} /></div>
-           
-           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 md:mb-6 relative z-10 gap-3">
-              <h3 className="text-lg md:text-xl font-bold text-slate-800 flex items-center gap-2">
-                <Crown size={20} className="text-yellow-500 fill-yellow-500" /> 
-                {statsMode === 'career' ? 'All-Time Leaders' : 'Season Leaders'}
-              </h3>
-              
-              {/* Toggle Switch */}
-              <div className="bg-slate-100 p-1 rounded-full flex items-center border border-slate-200 self-end sm:self-auto">
-                 <button 
-                   onClick={() => setStatsMode('career')}
-                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${statsMode === 'career' ? 'bg-white shadow-sm text-blue-700' : 'text-slate-500 hover:text-slate-700'}`}
-                 >
-                    <History size={12} /> Career
-                 </button>
-                 <button 
-                   onClick={() => setStatsMode('season')}
-                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${statsMode === 'season' ? 'bg-white shadow-sm text-green-700' : 'text-slate-500 hover:text-slate-700'}`}
-                 >
-                    <Calendar size={12} /> Season
-                 </button>
-              </div>
-           </div>
-           
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 relative z-10">
-              {/* Batting */}
-              <div className="space-y-3 md:space-y-4">
-                 <h4 className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1 border-b border-slate-100 pb-2 mb-2">
-                   <Flame size={12} className="text-orange-500" /> Run Machines
-                 </h4>
-                 {topRunScorers.map((player, idx) => (
-                   <div key={player.id} className="flex items-center gap-2 md:gap-3 group">
-                      <div className="relative shrink-0">
-                        <img src={player.avatarUrl} className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-slate-100 object-cover" />
-                        <span className="absolute -bottom-1 -right-1 bg-slate-800 text-white text-[9px] md:text-[10px] font-bold w-3.5 h-3.5 md:w-4 md:h-4 flex items-center justify-center rounded-full border border-white">
-                          {idx + 1}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                         <div className="flex justify-between items-center mb-1">
-                            <p className="text-xs font-bold text-slate-800 truncate">{player.name}</p>
-                            <span className="text-xs font-black text-slate-600">{player.displayRuns}</span>
-                         </div>
-                         <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden w-full">
-                            <div className="h-full bg-orange-500 rounded-full transition-all duration-1000" style={{ width: `${(player.displayRuns / (topRunScorers[0]?.displayRuns || 1)) * 100}%` }}></div>
-                         </div>
-                      </div>
-                   </div>
-                 ))}
-              </div>
-
-              {/* Bowling */}
-              <div className="space-y-3 md:space-y-4 md:border-l border-slate-100 md:pl-8">
-                 <h4 className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1 border-b border-slate-100 pb-2 mb-2">
-                   <Zap size={12} className="text-blue-500" /> Wicket Takers
-                 </h4>
-                 {topWicketTakers.map((player, idx) => (
-                   <div key={player.id} className="flex items-center gap-2 md:gap-3 group">
-                      <div className="relative shrink-0">
-                        <img src={player.avatarUrl} className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-slate-100 object-cover" />
-                        <span className="absolute -bottom-1 -right-1 bg-slate-800 text-white text-[9px] md:text-[10px] font-bold w-3.5 h-3.5 md:w-4 md:h-4 flex items-center justify-center rounded-full border border-white">
-                          {idx + 1}
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                         <div className="flex justify-between items-center mb-1">
-                            <p className="text-xs font-bold text-slate-800 truncate">{player.name}</p>
-                            <span className="text-xs font-black text-slate-600">{player.displayWickets}</span>
-                         </div>
-                         <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden w-full">
-                            <div className="h-full bg-blue-500 rounded-full transition-all duration-1000" style={{ width: `${(player.displayWickets / (topWicketTakers[0]?.displayWickets || 1)) * 100}%` }}></div>
-                         </div>
-                      </div>
-                   </div>
-                 ))}
-              </div>
-           </div>
-      </div>
-
-      {/* 4. Tournament Group Table */}
+      {/* 3. Tournament Group Table (Moved Up) */}
       <div className="bg-slate-900 rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl border border-slate-800 w-full">
          <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-4 md:p-6 border-b border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
             <div>
@@ -369,6 +287,87 @@ const Dashboard: React.FC<DashboardProps> = ({ players, matches }) => {
          </div>
       </div>
 
+      {/* 4. Top Stats (Full Width) */}
+      <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg border border-slate-100 p-4 md:p-6 overflow-hidden relative">
+           <div className="absolute top-0 right-0 p-4 opacity-5"><Target size={120} /></div>
+           
+           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 md:mb-6 relative z-10 gap-3">
+              <h3 className="text-lg md:text-xl font-bold text-slate-800 flex items-center gap-2">
+                <Crown size={20} className="text-yellow-500 fill-yellow-500" /> 
+                {statsMode === 'career' ? 'All-Time Leaders' : 'Season Leaders'}
+              </h3>
+              
+              {/* Toggle Switch */}
+              <div className="bg-slate-100 p-1 rounded-full flex items-center border border-slate-200 self-end sm:self-auto">
+                 <button 
+                   onClick={() => setStatsMode('career')}
+                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${statsMode === 'career' ? 'bg-white shadow-sm text-blue-700' : 'text-slate-500 hover:text-slate-700'}`}
+                 >
+                    <History size={12} /> Career
+                 </button>
+                 <button 
+                   onClick={() => setStatsMode('season')}
+                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${statsMode === 'season' ? 'bg-white shadow-sm text-green-700' : 'text-slate-500 hover:text-slate-700'}`}
+                 >
+                    <Calendar size={12} /> Season
+                 </button>
+              </div>
+           </div>
+           
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 relative z-10">
+              {/* Batting */}
+              <div className="space-y-3 md:space-y-4">
+                 <h4 className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1 border-b border-slate-100 pb-2 mb-2">
+                   <Flame size={12} className="text-orange-500" /> Run Machines
+                 </h4>
+                 {topRunScorers.map((player, idx) => (
+                   <div key={player.id} className="flex items-center gap-2 md:gap-3 group">
+                      <div className="relative shrink-0">
+                        <img src={player.avatarUrl} className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-slate-100 object-cover" />
+                        <span className="absolute -bottom-1 -right-1 bg-slate-800 text-white text-[9px] md:text-[10px] font-bold w-3.5 h-3.5 md:w-4 md:h-4 flex items-center justify-center rounded-full border border-white">
+                          {idx + 1}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                         <div className="flex justify-between items-center mb-1">
+                            <p className="text-xs font-bold text-slate-800 truncate">{player.name}</p>
+                            <span className="text-xs font-black text-slate-600">{player.displayRuns}</span>
+                         </div>
+                         <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden w-full">
+                            <div className="h-full bg-orange-500 rounded-full transition-all duration-1000" style={{ width: `${(player.displayRuns / (topRunScorers[0]?.displayRuns || 1)) * 100}%` }}></div>
+                         </div>
+                      </div>
+                   </div>
+                 ))}
+              </div>
+
+              {/* Bowling */}
+              <div className="space-y-3 md:space-y-4 md:border-l border-slate-100 md:pl-8">
+                 <h4 className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1 border-b border-slate-100 pb-2 mb-2">
+                   <Zap size={12} className="text-blue-500" /> Wicket Takers
+                 </h4>
+                 {topWicketTakers.map((player, idx) => (
+                   <div key={player.id} className="flex items-center gap-2 md:gap-3 group">
+                      <div className="relative shrink-0">
+                        <img src={player.avatarUrl} className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-slate-100 object-cover" />
+                        <span className="absolute -bottom-1 -right-1 bg-slate-800 text-white text-[9px] md:text-[10px] font-bold w-3.5 h-3.5 md:w-4 md:h-4 flex items-center justify-center rounded-full border border-white">
+                          {idx + 1}
+                        </span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                         <div className="flex justify-between items-center mb-1">
+                            <p className="text-xs font-bold text-slate-800 truncate">{player.name}</p>
+                            <span className="text-xs font-black text-slate-600">{player.displayWickets}</span>
+                         </div>
+                         <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden w-full">
+                            <div className="h-full bg-blue-500 rounded-full transition-all duration-1000" style={{ width: `${(player.displayWickets / (topWicketTakers[0]?.displayWickets || 1)) * 100}%` }}></div>
+                         </div>
+                      </div>
+                   </div>
+                 ))}
+              </div>
+           </div>
+      </div>
     </div>
   );
 };

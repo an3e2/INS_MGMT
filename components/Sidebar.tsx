@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
@@ -43,6 +44,12 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, userRole = 'guest', o
 
   // Next Match Logic
   useEffect(() => {
+    // Safety check for matches
+    if (!matches || !Array.isArray(matches)) {
+        setNextMatch(null);
+        return;
+    }
+
     const upcoming = matches
         .filter(m => m.isUpcoming)
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());

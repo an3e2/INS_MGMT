@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Shield, Users, Ticket, ArrowRight, Lock, Loader2, ChevronRight, X } from 'lucide-react';
+import { Shield, Users, Ticket, ArrowRight, Lock, Loader2, ChevronRight, X, User } from 'lucide-react';
 import { UserRole } from '../types';
 
 interface SplashScreenProps {
@@ -12,6 +12,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, teamLogo = '' }
   // 0: Init, 1: Logo Reveal, 2: Text Reveal, 3: Buttons Reveal, 4: Auth Mode
   const [animationStep, setAnimationStep] = useState(0);
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
+  const [userId, setUserId] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
@@ -74,6 +75,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, teamLogo = '' }
     } else {
       setSelectedRole(role);
       setError('');
+      setUserId('');
       setPassword('');
       setAnimationStep(4);
     }
@@ -93,15 +95,28 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, teamLogo = '' }
     setTimeout(() => {
       setIsAuthenticating(false);
       
-      // Demo Credentials
-      if (selectedRole === 'admin' && password === 'admin123') {
-        initiateAppEntry('admin');
-      } else if (selectedRole === 'member' && password === 'member123') {
-        initiateAppEntry('member');
-      } else {
-        setError(`Incorrect password for ${selectedRole}.`);
+      // Validation Logic
+      let isValid = false;
+      const normalizedUser = userId.trim().toLowerCase();
+
+      if (selectedRole === 'admin') {
+         // Admin Validation: ID='admin', Pass='admin123'
+         if (normalizedUser === 'admin' && password === 'admin123') {
+           isValid = true;
+         }
+      } else if (selectedRole === 'member') {
+         // Member Validation: ID='member', Pass='member123'
+         if (normalizedUser === 'member' && password === 'member123') {
+           isValid = true;
+         }
       }
-    }, 1000);
+
+      if (isValid && selectedRole) {
+        initiateAppEntry(selectedRole);
+      } else {
+        setError('Invalid User ID or Password.');
+      }
+    }, 800);
   };
 
   if (isAppLoading) {
@@ -267,16 +282,32 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, teamLogo = '' }
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-white capitalize">{selectedRole} Login</h3>
+                  <p className="text-xs text-slate-400">Enter your secure credentials</p>
                 </div>
               </div>
 
               <form onSubmit={handleLogin} className="space-y-4">
+                {/* User ID Field */}
+                <div>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                    <input 
+                      type="text"
+                      autoFocus
+                      value={userId}
+                      onChange={(e) => setUserId(e.target.value)}
+                      placeholder="User ID"
+                      className="w-full bg-slate-800 border border-slate-700 focus:border-blue-500 text-white pl-12 pr-4 py-3 rounded-xl outline-none transition-colors placeholder:text-slate-600"
+                    />
+                  </div>
+                </div>
+
+                {/* Password Field */}
                 <div>
                   <div className="relative">
                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
                     <input 
                       type="password"
-                      autoFocus
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="Password"
@@ -293,14 +324,14 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, teamLogo = '' }
 
                 <button 
                   type="submit"
-                  disabled={!password || isAuthenticating}
+                  disabled={!userId || !password || isAuthenticating}
                   className={`
                     w-full py-3 rounded-xl font-bold flex items-center justify-center gap-2 transition-all mt-4
                     ${selectedRole === 'admin' 
                       ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/20' 
                       : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-600/20'
                     }
-                    ${(!password || isAuthenticating) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'}
+                    ${(!userId || !password || isAuthenticating) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-[1.02]'}
                   `}
                 >
                   {isAuthenticating ? <Loader2 size={18} className="animate-spin" /> : 'Enter'}
