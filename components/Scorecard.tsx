@@ -704,7 +704,7 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
                <Calendar size={14} /> Select Scheduled Fixture (Auto-fill)
              </label>
              <select 
-               className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-800 font-medium"
+               className="w-full p-3 bg-white border border-slate-300 rounded-xl text-slate-800 font-medium text-sm"
                onChange={handleSelectScheduledMatch}
                defaultValue=""
              >
@@ -767,35 +767,35 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
     const partnershipData = calculateCurrentPartnership(inningIdx as 0 | 1);
 
     return (
-      <div className="space-y-8 animate-fade-in relative">
+      <div className="space-y-4 md:space-y-8 animate-fade-in relative">
         <div className="flex justify-between items-end border-b border-slate-200 pb-4">
            <div>
-             <h3 className="text-2xl font-black text-slate-800 uppercase tracking-tight">{teamName}</h3>
-             <p className="text-slate-500 font-medium">Innings {inningIdx + 1} {data.matchInfo.tournament && `• ${data.matchInfo.tournament}`}</p>
+             <h3 className="text-xl md:text-2xl font-black text-slate-800 uppercase tracking-tight">{teamName}</h3>
+             <p className="text-slate-500 font-medium text-xs md:text-sm">Innings {inningIdx + 1} {data.matchInfo.tournament && `• ${data.matchInfo.tournament}`}</p>
            </div>
            <div className="text-right">
-              <span className="text-4xl font-black text-slate-800">{inning.totalRuns}/{inning.wickets}</span>
-              <span className="text-lg text-slate-600 font-bold ml-2">({inning.overs} ov)</span>
+              <span className="text-2xl md:text-4xl font-black text-slate-800">{inning.totalRuns}/{inning.wickets}</span>
+              <span className="text-sm md:text-lg text-slate-600 font-bold ml-2">({inning.overs} ov)</span>
            </div>
         </div>
 
         {isLiveMode && (
           <div className="bg-slate-900 rounded-2xl overflow-hidden shadow-2xl border border-slate-700">
-             <div className="p-4 bg-slate-950 border-b border-slate-800 flex flex-col md:flex-row justify-between gap-4">
+             <div className="p-3 md:p-4 bg-slate-950 border-b border-slate-800 flex flex-col md:flex-row justify-between gap-3 md:gap-4">
                 <div className="flex items-center gap-3">
-                   <div className="bg-red-600 px-2 py-1 rounded text-xs font-bold text-white animate-pulse flex items-center gap-1">
+                   <div className="bg-red-600 px-2 py-1 rounded text-xs font-bold text-white animate-pulse flex items-center gap-1 shrink-0">
                      <span className="w-2 h-2 bg-white rounded-full"></span> LIVE
                    </div>
-                   <div className="flex gap-2">
-                      <select className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-sm text-white max-w-[120px]" value={liveState.strikerId} onChange={(e) => setLiveState({...liveState, strikerId: e.target.value})}>
+                   <div className="flex gap-1 md:gap-2 overflow-x-auto pb-1 md:pb-0">
+                      <select className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-xs md:text-sm text-white max-w-[100px] md:max-w-[120px]" value={liveState.strikerId} onChange={(e) => setLiveState({...liveState, strikerId: e.target.value})}>
                         <option value="">Striker</option>
                         {inning.batting.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                       </select>
-                      <select className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-sm text-white max-w-[120px]" value={liveState.nonStrikerId} onChange={(e) => setLiveState({...liveState, nonStrikerId: e.target.value})}>
+                      <select className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-xs md:text-sm text-white max-w-[100px] md:max-w-[120px]" value={liveState.nonStrikerId} onChange={(e) => setLiveState({...liveState, nonStrikerId: e.target.value})}>
                         <option value="">Non-Striker</option>
                         {inning.batting.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                       </select>
-                      <select className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-sm text-white max-w-[120px]" value={liveState.bowlerId} onChange={(e) => setLiveState({...liveState, bowlerId: e.target.value})}>
+                      <select className="bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-xs md:text-sm text-white max-w-[100px] md:max-w-[120px]" value={liveState.bowlerId} onChange={(e) => setLiveState({...liveState, bowlerId: e.target.value})}>
                         <option value="">Bowler</option>
                         {inning.bowling.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                       </select>
@@ -804,7 +804,7 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
                 <button 
                   onClick={handleUndo}
                   disabled={history.length === 0}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors text-sm disabled:opacity-50"
+                  className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg transition-colors text-xs md:text-sm disabled:opacity-50 self-end md:self-auto"
                 >
                   <RotateCcw size={14} /> Undo Last Ball
                 </button>
@@ -812,12 +812,12 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
 
              {/* Partnership Display */}
              {partnershipData && (
-                <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-2 border-b border-slate-700 flex flex-col md:flex-row items-center justify-center gap-4 text-sm shadow-inner">
+                <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-2 border-b border-slate-700 flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 text-sm shadow-inner">
                     <div className="flex items-center gap-2">
-                       <Handshake size={16} className="text-blue-400" />
-                       <span className="text-slate-400 uppercase font-bold text-xs tracking-wider">Current Partnership:</span>
-                       <span className="text-white font-bold">{partnershipData.totalRuns} runs</span>
-                       <span className="text-slate-400">in {partnershipData.totalBalls} balls</span>
+                       <Handshake size={14} className="text-blue-400" />
+                       <span className="text-slate-400 uppercase font-bold text-[10px] md:text-xs tracking-wider">Partnership:</span>
+                       <span className="text-white font-bold">{partnershipData.totalRuns}</span>
+                       <span className="text-slate-400 text-xs">({partnershipData.totalBalls} balls)</span>
                     </div>
                     <div className="hidden md:block w-px h-4 bg-slate-700"></div>
                     <div className="flex items-center gap-4 text-xs">
@@ -833,35 +833,35 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
              )}
 
              <div className="flex flex-col md:flex-row">
-                <div className="flex-1 p-4 md:p-6 border-b md:border-b-0 md:border-r border-slate-800">
+                <div className="flex-1 p-3 md:p-6 border-b md:border-b-0 md:border-r border-slate-800">
                     <div className="grid grid-cols-4 md:grid-cols-6 gap-2 mb-4">
                         {[0, 1, 2, 3, 4, 6].map(run => (
-                          <button key={run} onClick={() => handleScoreBall(run, false, false, false)} className="py-4 bg-slate-800 hover:bg-slate-700 rounded-xl font-black text-2xl border border-slate-700 transition-all hover:-translate-y-1 text-white shadow-lg active:scale-95">
+                          <button key={run} onClick={() => handleScoreBall(run, false, false, false)} className="py-3 md:py-4 bg-slate-800 hover:bg-slate-700 rounded-xl font-black text-xl md:text-2xl border border-slate-700 transition-all hover:-translate-y-1 text-white shadow-lg active:scale-95 active:bg-blue-600">
                             {run}
                           </button>
                         ))}
                     </div>
                     <div className="grid grid-cols-2 gap-2 mb-4">
-                        <button onClick={() => handleScoreBall(0, false, false, true)} className="py-3 bg-red-600 hover:bg-red-700 rounded-xl font-bold border border-red-500 text-white shadow-lg shadow-red-900/50">WICKET</button>
-                        <button onClick={() => handleScoreBall(5, false, false, false)} className="py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold border border-slate-700 text-white">5 Runs</button>
+                        <button onClick={() => handleScoreBall(0, false, false, true)} className="py-3 bg-red-600 hover:bg-red-700 rounded-xl font-bold border border-red-500 text-white shadow-lg shadow-red-900/50 active:scale-95">WICKET</button>
+                        <button onClick={() => handleScoreBall(5, false, false, false)} className="py-3 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold border border-slate-700 text-white active:scale-95">5 Runs</button>
                     </div>
 
                     <div className="space-y-2">
                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Extras</p>
-                       <div className="grid grid-cols-5 gap-1.5">
-                          {[0,1,2,3,4].map(n => <button key={`wd-${n}`} onClick={() => handleScoreBall(n, true, false, false)} className="p-2 bg-orange-900/40 text-orange-200 border border-orange-800 rounded text-xs font-bold hover:bg-orange-900">WD{n>0 ? `+${n}`:''}</button>)}
-                          {[0,1,2,3,4].map(n => <button key={`nb-${n}`} onClick={() => handleScoreBall(n, false, true, false)} className="p-2 bg-yellow-900/40 text-yellow-200 border border-yellow-800 rounded text-xs font-bold hover:bg-yellow-900">NB{n>0 ? `+${n}`:''}</button>)}
-                          {[1,2,3,4].map(n => <button key={`b-${n}`} onClick={() => handleScoreBall(n, false, false, false, true)} className="p-2 bg-blue-900/40 text-blue-200 border border-blue-800 rounded text-xs font-bold hover:bg-blue-900">B+{n}</button>)}
+                       <div className="grid grid-cols-5 gap-1">
+                          {[0,1,2,3,4].map(n => <button key={`wd-${n}`} onClick={() => handleScoreBall(n, true, false, false)} className="p-2 bg-orange-900/40 text-orange-200 border border-orange-800 rounded text-[10px] md:text-xs font-bold hover:bg-orange-900 active:bg-orange-800">WD{n>0 ? `+${n}`:''}</button>)}
+                          {[0,1,2,3,4].map(n => <button key={`nb-${n}`} onClick={() => handleScoreBall(n, false, true, false)} className="p-2 bg-yellow-900/40 text-yellow-200 border border-yellow-800 rounded text-[10px] md:text-xs font-bold hover:bg-yellow-900 active:bg-yellow-800">NB{n>0 ? `+${n}`:''}</button>)}
+                          {[1,2,3,4].map(n => <button key={`b-${n}`} onClick={() => handleScoreBall(n, false, false, false, true)} className="p-2 bg-blue-900/40 text-blue-200 border border-blue-800 rounded text-[10px] md:text-xs font-bold hover:bg-blue-900 active:bg-blue-800">B+{n}</button>)}
                           <div className="p-2"></div>
-                          {[1,2,3,4].map(n => <button key={`lb-${n}`} onClick={() => handleScoreBall(n, false, false, false, false, true)} className="p-2 bg-purple-900/40 text-purple-200 border border-purple-800 rounded text-xs font-bold hover:bg-purple-900">LB+{n}</button>)}
+                          {[1,2,3,4].map(n => <button key={`lb-${n}`} onClick={() => handleScoreBall(n, false, false, false, false, true)} className="p-2 bg-purple-900/40 text-purple-200 border border-purple-800 rounded text-[10px] md:text-xs font-bold hover:bg-purple-900 active:bg-purple-800">LB+{n}</button>)}
                        </div>
                     </div>
                 </div>
 
-                <div className="w-full md:w-80 bg-slate-950/50 flex flex-col h-64 md:h-[450px] border-l border-slate-800 shrink-0">
+                <div className="w-full md:w-80 bg-slate-950/50 flex flex-col h-48 md:h-[450px] border-l border-slate-800 shrink-0">
                    <div className="p-3 bg-slate-900 border-b border-slate-800 text-xs font-bold text-slate-400 uppercase">Ball by Ball</div>
                    <div className="flex-1 overflow-y-auto p-3 space-y-2 custom-scrollbar relative scroll-smooth">
-                      {ballCommentary.filter(b => b.inning === inningIdx).length === 0 && <div className="text-center text-slate-600 text-xs mt-10">Match started...</div>}
+                      {ballCommentary.filter(b => b.inning === inningIdx).length === 0 && <div className="text-center text-slate-600 text-xs mt-4">Match started...</div>}
                       {ballCommentary.filter(b => b.inning === inningIdx).map((ball, idx) => (
                           <div key={idx} className={`text-sm p-2 rounded-lg border ${ball.isWicket ? 'bg-red-900/20 border-red-800' : 'bg-slate-800/50 border-slate-700/50'}`}>
                              <div className="flex items-center gap-2 mb-1">
@@ -890,34 +890,34 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
             </button>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
+            <table className="w-full text-xs md:text-sm text-left">
               <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 text-xs uppercase">
                 <tr>
-                  <th className="p-3">Batsman</th>
-                  <th className="p-3 w-32">Dismissal</th>
-                  <th className="p-3 w-32">Fielder</th>
-                  <th className="p-3 w-32">Bowler</th>
-                  <th className="p-3 text-right">R</th>
-                  <th className="p-3 text-right">B</th>
-                  <th className="p-3 text-right">4s</th>
-                  <th className="p-3 text-right">6s</th>
-                  <th className="p-3 text-right">SR</th>
-                  <th className="p-3 w-10"></th>
+                  <th className="p-2 md:p-3 min-w-[120px]">Batsman</th>
+                  <th className="p-2 md:p-3 w-24 md:w-32">Dismissal</th>
+                  <th className="p-2 md:p-3 w-24 md:w-32">Fielder</th>
+                  <th className="p-2 md:p-3 w-24 md:w-32">Bowler</th>
+                  <th className="p-2 md:p-3 text-right">R</th>
+                  <th className="p-2 md:p-3 text-right">B</th>
+                  <th className="p-2 md:p-3 text-right">4s</th>
+                  <th className="p-2 md:p-3 text-right">6s</th>
+                  <th className="p-2 md:p-3 text-right">SR</th>
+                  <th className="p-2 md:p-3 w-8"></th>
                 </tr>
               </thead>
               <tbody>
                 {inning.batting.map((row) => (
                   <tr key={row.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="p-3"><input className="w-full bg-transparent font-bold text-slate-800 outline-none" value={row.name} onChange={(e) => handleBattingChange(inningIdx, row.id, 'name', e.target.value)} placeholder="Player Name" /></td>
-                    <td className="p-3"><select className="w-full bg-transparent text-slate-700 text-xs outline-none font-medium" value={row.howOut} onChange={(e) => handleBattingChange(inningIdx, row.id, 'howOut', e.target.value)}>{DISMISSAL_TYPES.map(type => <option key={type} value={type}>{type}</option>)}</select></td>
-                    <td className="p-3"><select className="w-full bg-transparent text-slate-700 text-xs outline-none font-medium" value={row.fielder || ''} onChange={(e) => handleBattingChange(inningIdx, row.id, 'fielder', e.target.value)}><option value="">-</option>{fieldingPlayers.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}</select></td>
-                    <td className="p-3"><select className="w-full bg-transparent text-slate-700 text-xs outline-none font-medium" value={row.bowler || ''} onChange={(e) => handleBattingChange(inningIdx, row.id, 'bowler', e.target.value)}><option value="">-</option>{fieldingPlayers.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}</select></td>
-                    <td className="p-3 text-right"><input type="number" className="w-12 text-right bg-transparent outline-none font-bold text-slate-900" value={row.runs} onChange={(e) => handleBattingChange(inningIdx, row.id, 'runs', Number(e.target.value))} /></td>
-                    <td className="p-3 text-right"><input type="number" className="w-12 text-right bg-transparent outline-none text-slate-800" value={row.balls} onChange={(e) => handleBattingChange(inningIdx, row.id, 'balls', Number(e.target.value))} /></td>
-                    <td className="p-3 text-right"><input type="number" className="w-12 text-right bg-transparent outline-none text-slate-600 font-medium" value={row.fours} onChange={(e) => handleBattingChange(inningIdx, row.id, 'fours', Number(e.target.value))} /></td>
-                    <td className="p-3 text-right"><input type="number" className="w-12 text-right bg-transparent outline-none text-slate-600 font-medium" value={row.sixes} onChange={(e) => handleBattingChange(inningIdx, row.id, 'sixes', Number(e.target.value))} /></td>
-                    <td className="p-3 text-right font-mono text-xs text-slate-600 font-medium">{getStrikeRate(row.runs, row.balls)}</td>
-                    <td className="p-3 text-center"><button onClick={() => removeRow('batting', inningIdx, row.id)} className="text-slate-300 hover:text-red-500"><Trash2 size={14} /></button></td>
+                    <td className="p-2 md:p-3"><input className="w-full bg-transparent font-bold text-slate-800 outline-none text-xs md:text-sm" value={row.name} onChange={(e) => handleBattingChange(inningIdx, row.id, 'name', e.target.value)} placeholder="Player Name" /></td>
+                    <td className="p-2 md:p-3"><select className="w-full bg-transparent text-slate-700 text-[10px] md:text-xs outline-none font-medium" value={row.howOut} onChange={(e) => handleBattingChange(inningIdx, row.id, 'howOut', e.target.value)}>{DISMISSAL_TYPES.map(type => <option key={type} value={type}>{type}</option>)}</select></td>
+                    <td className="p-2 md:p-3"><select className="w-full bg-transparent text-slate-700 text-[10px] md:text-xs outline-none font-medium" value={row.fielder || ''} onChange={(e) => handleBattingChange(inningIdx, row.id, 'fielder', e.target.value)}><option value="">-</option>{fieldingPlayers.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}</select></td>
+                    <td className="p-2 md:p-3"><select className="w-full bg-transparent text-slate-700 text-[10px] md:text-xs outline-none font-medium" value={row.bowler || ''} onChange={(e) => handleBattingChange(inningIdx, row.id, 'bowler', e.target.value)}><option value="">-</option>{fieldingPlayers.map(p => <option key={p.id} value={p.name}>{p.name}</option>)}</select></td>
+                    <td className="p-2 md:p-3 text-right"><input type="number" className="w-8 md:w-12 text-right bg-transparent outline-none font-bold text-slate-900" value={row.runs} onChange={(e) => handleBattingChange(inningIdx, row.id, 'runs', Number(e.target.value))} /></td>
+                    <td className="p-2 md:p-3 text-right"><input type="number" className="w-8 md:w-12 text-right bg-transparent outline-none text-slate-800" value={row.balls} onChange={(e) => handleBattingChange(inningIdx, row.id, 'balls', Number(e.target.value))} /></td>
+                    <td className="p-2 md:p-3 text-right"><input type="number" className="w-8 md:w-12 text-right bg-transparent outline-none text-slate-600 font-medium" value={row.fours} onChange={(e) => handleBattingChange(inningIdx, row.id, 'fours', Number(e.target.value))} /></td>
+                    <td className="p-2 md:p-3 text-right"><input type="number" className="w-8 md:w-12 text-right bg-transparent outline-none text-slate-600 font-medium" value={row.sixes} onChange={(e) => handleBattingChange(inningIdx, row.id, 'sixes', Number(e.target.value))} /></td>
+                    <td className="p-2 md:p-3 text-right font-mono text-[10px] md:text-xs text-slate-600 font-medium">{getStrikeRate(row.runs, row.balls)}</td>
+                    <td className="p-2 md:p-3 text-center"><button onClick={() => removeRow('batting', inningIdx, row.id)} className="text-slate-300 hover:text-red-500"><Trash2 size={14} /></button></td>
                   </tr>
                 ))}
               </tbody>
@@ -926,7 +926,7 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
         </div>
 
         {/* Extras & Bowling */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
              {/* ... Extras boxes ... */}
              <div className="bg-white p-3 rounded-xl border border-slate-200 text-center"><span className="block text-xs font-bold text-slate-600 uppercase">Wides</span><span className="text-xl font-black text-slate-800">{inning.bowling.reduce((sum, b) => sum + Number(b.wides || 0), 0)}</span></div>
              <div className="bg-white p-3 rounded-xl border border-slate-200 text-center"><span className="block text-xs font-bold text-slate-600 uppercase">No Balls</span><span className="text-xl font-black text-slate-800">{inning.bowling.reduce((sum, b) => sum + Number(b.noBalls || 0), 0)}</span></div>
@@ -942,36 +942,36 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
             <button onClick={() => addRow('bowling', inningIdx)} className="text-blue-600 hover:text-blue-800 text-xs font-bold flex items-center gap-1"><Plus size={14} /> Add Bowler</button>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
+            <table className="w-full text-xs md:text-sm text-left">
               <thead className="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 text-xs uppercase">
                 <tr>
-                  <th className="p-3">Bowler</th>
-                  <th className="p-3 text-right">O</th>
-                  <th className="p-3 text-right">M</th>
-                  <th className="p-3 text-right">R</th>
-                  <th className="p-3 text-right">W</th>
-                  <th className="p-3 text-right">Eco</th>
-                  <th className="p-3 text-right">WD</th>
-                  <th className="p-3 text-right">NB</th>
-                  <th className="p-3 text-right">LB</th>
-                  <th className="p-3 text-right">Dot</th>
-                  <th className="p-3 w-10"></th>
+                  <th className="p-2 md:p-3 min-w-[120px]">Bowler</th>
+                  <th className="p-2 md:p-3 text-right">O</th>
+                  <th className="p-2 md:p-3 text-right">M</th>
+                  <th className="p-2 md:p-3 text-right">R</th>
+                  <th className="p-2 md:p-3 text-right">W</th>
+                  <th className="p-2 md:p-3 text-right">Eco</th>
+                  <th className="p-2 md:p-3 text-right">WD</th>
+                  <th className="p-2 md:p-3 text-right">NB</th>
+                  <th className="p-2 md:p-3 text-right">LB</th>
+                  <th className="p-2 md:p-3 text-right">Dot</th>
+                  <th className="p-2 md:p-3 w-8"></th>
                 </tr>
               </thead>
               <tbody>
                 {inning.bowling.map((row) => (
                   <tr key={row.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="p-3"><input className="w-full bg-transparent font-bold text-slate-800 outline-none" value={row.name} onChange={(e) => handleBowlingChange(inningIdx, row.id, 'name', e.target.value)} placeholder="Player Name" /></td>
-                    <td className="p-3 text-right"><input type="number" step="0.1" className="w-12 text-right bg-transparent outline-none font-bold text-slate-900" value={row.overs} onChange={(e) => handleBowlingChange(inningIdx, row.id, 'overs', Number(e.target.value))} /></td>
-                    <td className="p-3 text-right"><input type="number" className="w-12 text-right bg-transparent outline-none text-slate-800" value={row.maidens} onChange={(e) => handleBowlingChange(inningIdx, row.id, 'maidens', Number(e.target.value))} /></td>
-                    <td className="p-3 text-right"><input type="number" className="w-12 text-right bg-transparent outline-none text-slate-800" value={row.runs} onChange={(e) => handleBowlingChange(inningIdx, row.id, 'runs', Number(e.target.value))} /></td>
-                    <td className="p-3 text-right"><input type="number" className="w-12 text-right bg-transparent outline-none text-blue-600 font-black" value={row.wickets} onChange={(e) => handleBowlingChange(inningIdx, row.id, 'wickets', Number(e.target.value))} /></td>
-                    <td className="p-3 text-right font-mono text-xs text-slate-600 font-medium">{getEconomy(row.runs, row.overs)}</td>
-                    <td className="p-3 text-right"><input type="number" className="w-12 text-right bg-transparent outline-none text-slate-600 font-medium" value={row.wides} onChange={(e) => handleBowlingChange(inningIdx, row.id, 'wides', Number(e.target.value))} /></td>
-                    <td className="p-3 text-right"><input type="number" className="w-12 text-right bg-transparent outline-none text-slate-600 font-medium" value={row.noBalls} onChange={(e) => handleBowlingChange(inningIdx, row.id, 'noBalls', Number(e.target.value))} /></td>
-                    <td className="p-3 text-right"><input type="number" className="w-12 text-right bg-transparent outline-none text-slate-600 font-medium" value={row.legByes} onChange={(e) => handleBowlingChange(inningIdx, row.id, 'legByes', Number(e.target.value))} /></td>
-                    <td className="p-3 text-right"><input type="number" className="w-12 text-right bg-transparent outline-none text-slate-600 font-medium" value={row.dots} onChange={(e) => handleBowlingChange(inningIdx, row.id, 'dots', Number(e.target.value))} /></td>
-                    <td className="p-3 text-center"><button onClick={() => removeRow('bowling', inningIdx, row.id)} className="text-slate-300 hover:text-red-500"><Trash2 size={14} /></button></td>
+                    <td className="p-2 md:p-3"><input className="w-full bg-transparent font-bold text-slate-800 outline-none text-xs md:text-sm" value={row.name} onChange={(e) => handleBowlingChange(inningIdx, row.id, 'name', e.target.value)} placeholder="Player Name" /></td>
+                    <td className="p-2 md:p-3 text-right"><input type="number" step="0.1" className="w-8 md:w-12 text-right bg-transparent outline-none font-bold text-slate-900" value={row.overs} onChange={(e) => handleBowlingChange(inningIdx, row.id, 'overs', Number(e.target.value))} /></td>
+                    <td className="p-2 md:p-3 text-right"><input type="number" className="w-8 md:w-12 text-right bg-transparent outline-none text-slate-800" value={row.maidens} onChange={(e) => handleBowlingChange(inningIdx, row.id, 'maidens', Number(e.target.value))} /></td>
+                    <td className="p-2 md:p-3 text-right"><input type="number" className="w-8 md:w-12 text-right bg-transparent outline-none text-slate-800" value={row.runs} onChange={(e) => handleBowlingChange(inningIdx, row.id, 'runs', Number(e.target.value))} /></td>
+                    <td className="p-2 md:p-3 text-right"><input type="number" className="w-8 md:w-12 text-right bg-transparent outline-none text-blue-600 font-black" value={row.wickets} onChange={(e) => handleBowlingChange(inningIdx, row.id, 'wickets', Number(e.target.value))} /></td>
+                    <td className="p-2 md:p-3 text-right font-mono text-[10px] md:text-xs text-slate-600 font-medium">{getEconomy(row.runs, row.overs)}</td>
+                    <td className="p-2 md:p-3 text-right"><input type="number" className="w-8 md:w-12 text-right bg-transparent outline-none text-slate-600 font-medium" value={row.wides} onChange={(e) => handleBowlingChange(inningIdx, row.id, 'wides', Number(e.target.value))} /></td>
+                    <td className="p-2 md:p-3 text-right"><input type="number" className="w-8 md:w-12 text-right bg-transparent outline-none text-slate-600 font-medium" value={row.noBalls} onChange={(e) => handleBowlingChange(inningIdx, row.id, 'noBalls', Number(e.target.value))} /></td>
+                    <td className="p-2 md:p-3 text-right"><input type="number" className="w-8 md:w-12 text-right bg-transparent outline-none text-slate-600 font-medium" value={row.legByes} onChange={(e) => handleBowlingChange(inningIdx, row.id, 'legByes', Number(e.target.value))} /></td>
+                    <td className="p-2 md:p-3 text-right"><input type="number" className="w-8 md:w-12 text-right bg-transparent outline-none text-slate-600 font-medium" value={row.dots} onChange={(e) => handleBowlingChange(inningIdx, row.id, 'dots', Number(e.target.value))} /></td>
+                    <td className="p-2 md:p-3 text-center"><button onClick={() => removeRow('bowling', inningIdx, row.id)} className="text-slate-300 hover:text-red-500"><Trash2 size={14} /></button></td>
                   </tr>
                 ))}
               </tbody>
@@ -984,11 +984,11 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
             <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
                 <div className="absolute inset-0 bg-black/40 backdrop-blur-sm animate-fade-in"></div>
                 <div className="relative animate-zoom-in">
-                    <div className="text-[200px] font-black italic text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-orange-600 drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] transform -skew-x-12">
+                    <div className="text-[100px] md:text-[200px] font-black italic text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-orange-600 drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)] transform -skew-x-12">
                         {boundaryAnim}
                     </div>
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-yellow-500/30 rounded-full blur-[80px] animate-pulse"></div>
-                    <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-4xl font-black text-white uppercase tracking-[0.5em] animate-bounce">
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] md:w-[300px] h-[200px] md:h-[300px] bg-yellow-500/30 rounded-full blur-[80px] animate-pulse"></div>
+                    <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-2xl md:text-4xl font-black text-white uppercase tracking-[0.5em] animate-bounce whitespace-nowrap">
                         {boundaryAnim === 4 ? 'FOUR!' : 'SIX!'}
                     </div>
                 </div>
@@ -997,50 +997,50 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
 
         {/* Milestone Overlay */}
         {milestone.visible && milestone.data && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none">
+            <div className="fixed inset-0 z-[100] flex items-center justify-center pointer-events-none p-4">
                 <div className="absolute inset-0 bg-black/80 backdrop-blur-md animate-fade-in"></div>
-                <div className="relative z-10 animate-zoom-in w-full max-w-lg p-6">
+                <div className="relative z-10 animate-zoom-in w-full max-w-lg">
                     {/* Decorative Elements */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-blue-500/20 rounded-full blur-[100px] animate-pulse"></div>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] md:w-[500px] h-[300px] md:h-[500px] bg-blue-500/20 rounded-full blur-[100px] animate-pulse"></div>
                     
                     <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-black p-1 rounded-3xl shadow-2xl border border-white/10 relative overflow-hidden">
                        <div className="absolute top-0 right-0 p-8 opacity-10">
-                          {milestone.data.type.includes('W') ? <Flame size={200} /> : <Trophy size={200} />}
+                          {milestone.data.type.includes('W') ? <Flame size={150} /> : <Trophy size={150} />}
                        </div>
                        
-                       <div className="bg-slate-900/90 rounded-[22px] p-8 text-center relative z-10 backdrop-blur-sm">
-                           <div className="inline-block px-4 py-1 rounded-full bg-blue-600/20 text-blue-400 text-sm font-bold tracking-widest mb-4 border border-blue-500/30">
+                       <div className="bg-slate-900/90 rounded-[22px] p-6 md:p-8 text-center relative z-10 backdrop-blur-sm">
+                           <div className="inline-block px-4 py-1 rounded-full bg-blue-600/20 text-blue-400 text-xs md:text-sm font-bold tracking-widest mb-4 border border-blue-500/30">
                               MILESTONE UNLOCKED
                            </div>
                            
-                           <h2 className="text-5xl md:text-6xl font-black text-white italic tracking-tighter mb-2 drop-shadow-lg leading-none">
+                           <h2 className="text-4xl md:text-6xl font-black text-white italic tracking-tighter mb-2 drop-shadow-lg leading-none">
                               {milestone.data.title}
                            </h2>
                            
-                           <div className="text-2xl font-bold text-slate-300 mb-6 flex items-center justify-center gap-2">
+                           <div className="text-xl md:text-2xl font-bold text-slate-300 mb-6 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2">
                               {milestone.data.playerName}
-                              {milestone.data.subText && <span className="text-lg font-normal text-slate-500"> {milestone.data.subText}</span>}
+                              {milestone.data.subText && <span className="text-sm md:text-lg font-normal text-slate-500"> {milestone.data.subText}</span>}
                            </div>
 
-                           <div className="grid grid-cols-2 gap-4">
-                              <div className="bg-slate-800/50 p-4 rounded-xl border border-white/5">
-                                 <p className="text-slate-500 text-xs font-bold uppercase">{milestone.data.stats.label1}</p>
-                                 <p className="text-3xl font-black text-white">{milestone.data.stats.value1}</p>
+                           <div className="grid grid-cols-2 gap-3 md:gap-4">
+                              <div className="bg-slate-800/50 p-3 md:p-4 rounded-xl border border-white/5">
+                                 <p className="text-slate-500 text-[10px] md:text-xs font-bold uppercase">{milestone.data.stats.label1}</p>
+                                 <p className="text-2xl md:text-3xl font-black text-white">{milestone.data.stats.value1}</p>
                               </div>
-                              <div className="bg-slate-800/50 p-4 rounded-xl border border-white/5">
-                                 <p className="text-slate-500 text-xs font-bold uppercase">{milestone.data.stats.label2}</p>
-                                 <p className="text-3xl font-black text-white">{milestone.data.stats.value2}</p>
+                              <div className="bg-slate-800/50 p-3 md:p-4 rounded-xl border border-white/5">
+                                 <p className="text-slate-500 text-[10px] md:text-xs font-bold uppercase">{milestone.data.stats.label2}</p>
+                                 <p className="text-2xl md:text-3xl font-black text-white">{milestone.data.stats.value2}</p>
                               </div>
                               {milestone.data.stats.label3 && (
-                                <div className="bg-slate-800/50 p-4 rounded-xl border border-white/5">
-                                   <p className="text-slate-500 text-xs font-bold uppercase">{milestone.data.stats.label3}</p>
-                                   <p className="text-3xl font-black text-white">{milestone.data.stats.value3}</p>
+                                <div className="bg-slate-800/50 p-3 md:p-4 rounded-xl border border-white/5">
+                                   <p className="text-slate-500 text-[10px] md:text-xs font-bold uppercase">{milestone.data.stats.label3}</p>
+                                   <p className="text-2xl md:text-3xl font-black text-white">{milestone.data.stats.value3}</p>
                                 </div>
                               )}
                               {milestone.data.stats.label4 && (
-                                <div className="bg-slate-800/50 p-4 rounded-xl border border-white/5">
-                                   <p className="text-slate-500 text-xs font-bold uppercase">{milestone.data.stats.label4}</p>
-                                   <p className="text-3xl font-black text-white">{milestone.data.stats.value4}</p>
+                                <div className="bg-slate-800/50 p-3 md:p-4 rounded-xl border border-white/5">
+                                   <p className="text-slate-500 text-[10px] md:text-xs font-bold uppercase">{milestone.data.stats.label4}</p>
+                                   <p className="text-2xl md:text-3xl font-black text-white">{milestone.data.stats.value4}</p>
                                 </div>
                               )}
                            </div>
@@ -1054,19 +1054,19 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
   };
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-4 md:space-y-6 max-w-5xl mx-auto">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Match Scorecard</h2>
-          <p className="text-slate-500">Live scoring and result entry</p>
+          <h2 className="text-xl md:text-2xl font-bold text-slate-800">Match Scorecard</h2>
+          <p className="text-slate-500 text-sm">Live scoring and result entry</p>
         </div>
-        <div className="flex gap-2">
-            <button onClick={() => setIsLiveMode(!isLiveMode)} className={`flex items-center gap-2 px-4 py-2 rounded-xl font-bold transition-all border ${isLiveMode ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
+        <div className="flex gap-2 w-full md:w-auto">
+            <button onClick={() => setIsLiveMode(!isLiveMode)} className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold transition-all border text-sm md:text-base ${isLiveMode ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'}`}>
               <Zap size={18} className={isLiveMode ? "fill-red-600" : ""} />
-              {isLiveMode ? 'Exit Live Mode' : 'Start Live Scoring'}
+              {isLiveMode ? 'Exit Live' : 'Go Live'}
             </button>
-            <button className="flex items-center gap-2 px-5 py-2 bg-slate-900 text-white rounded-xl font-bold shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all">
-              <Save size={18} /> Save Match
+            <button className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl font-bold shadow-lg shadow-slate-900/20 hover:bg-slate-800 transition-all text-sm md:text-base">
+              <Save size={18} /> Save
             </button>
         </div>
       </div>
@@ -1082,19 +1082,19 @@ const Scorecard: React.FC<ScorecardProps> = ({ opponents = [], players = [], mat
       )}
 
       {/* Navigation Tabs */}
-      <div className="flex p-1 bg-white rounded-xl shadow-sm border border-slate-100 w-full md:w-fit">
+      <div className="flex p-1 bg-white rounded-xl shadow-sm border border-slate-100 w-full md:w-fit overflow-x-auto">
         {['Match Info', '1st Innings', '2nd Innings'].map((tab, idx) => (
           <button
             key={idx}
             onClick={() => setActiveTab(idx === 0 ? 2 : idx === 1 ? 0 : 1)}
-            className={`flex-1 md:flex-none px-6 py-2.5 rounded-lg text-sm font-bold transition-all ${(activeTab === 0 && idx === 1) || (activeTab === 1 && idx === 2) || (activeTab === 2 && idx === 0) ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
+            className={`flex-1 md:flex-none px-4 md:px-6 py-2 md:py-2.5 rounded-lg text-xs md:text-sm font-bold transition-all whitespace-nowrap ${(activeTab === 0 && idx === 1) || (activeTab === 1 && idx === 2) || (activeTab === 2 && idx === 0) ? 'bg-blue-600 text-white shadow-md' : 'text-slate-500 hover:bg-slate-50'}`}
           >
             {tab}
           </button>
         ))}
       </div>
 
-      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-xl border border-slate-100 min-h-[600px]">
+      <div className="bg-white rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-xl border border-slate-100 min-h-[500px]">
         {renderTabContent()}
       </div>
 

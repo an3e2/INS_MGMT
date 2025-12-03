@@ -274,11 +274,11 @@ const FieldingBoard: React.FC = () => {
   });
 
   return (
-    <div className="flex h-[calc(100vh-6rem)] gap-4 overflow-hidden">
+    <div className="flex flex-col lg:flex-row h-auto lg:h-[calc(100vh-6rem)] gap-4 overflow-y-auto lg:overflow-hidden pb-20 lg:pb-0">
       
       {/* LEFT: THE GROUND CONTAINER */}
       <div 
-        className="flex-1 relative bg-slate-800 rounded-3xl shadow-inner border-4 border-slate-900 flex items-center justify-center overflow-hidden"
+        className="w-full lg:flex-1 relative bg-slate-800 rounded-3xl shadow-inner border-4 border-slate-900 flex items-center justify-center overflow-hidden shrink-0 aspect-square lg:aspect-auto min-h-[300px]"
         onClick={handleBackgroundClick}
       >
           
@@ -453,8 +453,8 @@ const FieldingBoard: React.FC = () => {
           </div>
       </div>
 
-      {/* RIGHT: VERTICAL TOOLBAR */}
-      <div className="w-80 flex flex-col gap-4 overflow-hidden shrink-0">
+      {/* RIGHT/BOTTOM: TOOLBAR */}
+      <div className="w-full lg:w-80 flex flex-col gap-4 overflow-hidden shrink-0">
         
         {/* Card 1: Match Context */}
         <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 space-y-4">
@@ -555,7 +555,7 @@ const FieldingBoard: React.FC = () => {
         </div>
 
         {/* Card 3: Dugout */}
-        <div className="bg-slate-900 rounded-2xl shadow-sm border border-slate-800 flex flex-col overflow-hidden flex-1 min-h-0">
+        <div className="bg-slate-900 rounded-2xl shadow-sm border border-slate-800 flex flex-col overflow-hidden flex-1 min-h-[200px] lg:min-h-0">
           <div className="p-3 bg-slate-950 border-b border-slate-800 flex justify-between items-center shrink-0">
              <h3 className="font-bold text-white text-sm flex items-center gap-2">
                <GripVertical size={14} className="text-slate-400" /> Dugout

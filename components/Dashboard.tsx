@@ -25,9 +25,6 @@ const Dashboard: React.FC<DashboardProps> = ({ players, matches }) => {
   }, []);
 
   // -- Top Performers Logic --
-  // We map players to include a display value based on the mode
-  // Note: Since we don't have explicit "Season" logs separate from "Career" in the basic types yet,
-  // we simulate Season stats as roughly 30% of career stats for demonstration purposes.
   const processedPlayers = players.map(p => {
     const isCareer = statsMode === 'career';
     return {
@@ -111,30 +108,30 @@ const Dashboard: React.FC<DashboardProps> = ({ players, matches }) => {
   };
 
   return (
-    <div className="space-y-8 animate-fade-in pb-12 w-full overflow-hidden">
+    <div className="space-y-4 md:space-y-8 animate-fade-in pb-12 w-full overflow-hidden">
       
       {/* 1. Hero Section */}
-      <div className="text-center py-6">
-        <h1 className="text-4xl md:text-6xl font-black tracking-tighter uppercase transparent bg-clip-text bg-gradient-to-r from-orange-500 via-white to-green-500 drop-shadow-sm" style={{ WebkitTextStroke: '1px #cbd5e1' }}>
+      <div className="text-center py-4 md:py-6">
+        <h1 className="text-3xl md:text-6xl font-black tracking-tighter uppercase transparent bg-clip-text bg-gradient-to-r from-orange-500 via-white to-green-500 drop-shadow-sm leading-tight" style={{ WebkitTextStroke: '1px #cbd5e1' }}>
           One Team, One Dream
         </h1>
-        <div className="h-1 w-24 bg-blue-600 mx-auto mt-4 rounded-full"></div>
+        <div className="h-1 w-16 md:w-24 bg-blue-600 mx-auto mt-2 md:mt-4 rounded-full"></div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-8">
+      <div className="grid lg:grid-cols-2 gap-4 md:gap-8">
         
         {/* 2. Top Stats (Side by Side) */}
-        <div className="bg-white rounded-3xl shadow-lg border border-slate-100 p-6 overflow-hidden relative">
+        <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg border border-slate-100 p-4 md:p-6 overflow-hidden relative">
            <div className="absolute top-0 right-0 p-4 opacity-5"><Target size={120} /></div>
            
-           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 relative z-10 gap-4">
-              <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                <Crown size={24} className="text-yellow-500 fill-yellow-500" /> 
+           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 md:mb-6 relative z-10 gap-3">
+              <h3 className="text-lg md:text-xl font-bold text-slate-800 flex items-center gap-2">
+                <Crown size={20} className="text-yellow-500 fill-yellow-500" /> 
                 {statsMode === 'career' ? 'All-Time Leaders' : 'Season Leaders'}
               </h3>
               
               {/* Toggle Switch */}
-              <div className="bg-slate-100 p-1 rounded-full flex items-center border border-slate-200">
+              <div className="bg-slate-100 p-1 rounded-full flex items-center border border-slate-200 self-end sm:self-auto">
                  <button 
                    onClick={() => setStatsMode('career')}
                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${statsMode === 'career' ? 'bg-white shadow-sm text-blue-700' : 'text-slate-500 hover:text-slate-700'}`}
@@ -150,17 +147,17 @@ const Dashboard: React.FC<DashboardProps> = ({ players, matches }) => {
               </div>
            </div>
            
-           <div className="grid grid-cols-2 gap-6 relative z-10">
+           <div className="grid grid-cols-2 gap-4 md:gap-6 relative z-10">
               {/* Batting */}
-              <div className="space-y-4">
-                 <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+              <div className="space-y-3 md:space-y-4">
+                 <h4 className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
                    <Flame size={12} className="text-orange-500" /> Run Machines
                  </h4>
                  {topRunScorers.map((player, idx) => (
-                   <div key={player.id} className="flex items-center gap-3 group">
+                   <div key={player.id} className="flex items-center gap-2 md:gap-3 group">
                       <div className="relative shrink-0">
-                        <img src={player.avatarUrl} className="w-10 h-10 rounded-full border-2 border-slate-100 object-cover" />
-                        <span className="absolute -bottom-1 -right-1 bg-slate-800 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-white">
+                        <img src={player.avatarUrl} className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-slate-100 object-cover" />
+                        <span className="absolute -bottom-1 -right-1 bg-slate-800 text-white text-[9px] md:text-[10px] font-bold w-3.5 h-3.5 md:w-4 md:h-4 flex items-center justify-center rounded-full border border-white">
                           {idx + 1}
                         </span>
                       </div>
@@ -178,15 +175,15 @@ const Dashboard: React.FC<DashboardProps> = ({ players, matches }) => {
               </div>
 
               {/* Bowling */}
-              <div className="space-y-4 border-l border-slate-100 pl-6">
-                 <h4 className="text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+              <div className="space-y-3 md:space-y-4 border-l border-slate-100 pl-4 md:pl-6">
+                 <h4 className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
                    <Zap size={12} className="text-blue-500" /> Wicket Takers
                  </h4>
                  {topWicketTakers.map((player, idx) => (
-                   <div key={player.id} className="flex items-center gap-3 group">
+                   <div key={player.id} className="flex items-center gap-2 md:gap-3 group">
                       <div className="relative shrink-0">
-                        <img src={player.avatarUrl} className="w-10 h-10 rounded-full border-2 border-slate-100 object-cover" />
-                        <span className="absolute -bottom-1 -right-1 bg-slate-800 text-white text-[10px] font-bold w-4 h-4 flex items-center justify-center rounded-full border border-white">
+                        <img src={player.avatarUrl} className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-slate-100 object-cover" />
+                        <span className="absolute -bottom-1 -right-1 bg-slate-800 text-white text-[9px] md:text-[10px] font-bold w-3.5 h-3.5 md:w-4 md:h-4 flex items-center justify-center rounded-full border border-white">
                           {idx + 1}
                         </span>
                       </div>
@@ -206,38 +203,38 @@ const Dashboard: React.FC<DashboardProps> = ({ players, matches }) => {
         </div>
 
         {/* 3. Team Achievements */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl shadow-xl p-8 text-white relative overflow-hidden flex flex-col justify-center">
+        <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl md:rounded-3xl shadow-xl p-6 md:p-8 text-white relative overflow-hidden flex flex-col justify-center">
             <div className="absolute top-0 right-0 p-8 opacity-10"><Trophy size={180} /></div>
             
-            <h3 className="text-2xl font-black mb-8 relative z-10 flex items-center gap-3">
+            <h3 className="text-xl md:text-2xl font-black mb-6 md:mb-8 relative z-10 flex items-center gap-3">
               <Award className="text-yellow-400" /> Team Legacy
             </h3>
 
-            <div className="grid grid-cols-3 gap-4 relative z-10">
-               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 text-center border border-white/10 hover:bg-white/20 transition-colors">
-                  <div className="text-yellow-400 mb-2 flex justify-center"><Trophy size={28} /></div>
-                  <div className="text-3xl font-black mb-1">7</div>
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-slate-300">Winners</div>
+            <div className="grid grid-cols-3 gap-3 md:gap-4 relative z-10">
+               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 md:p-4 text-center border border-white/10 hover:bg-white/20 transition-colors">
+                  <div className="text-yellow-400 mb-2 flex justify-center"><Trophy size={24} className="md:w-7 md:h-7" /></div>
+                  <div className="text-2xl md:text-3xl font-black mb-1">7</div>
+                  <div className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-slate-300">Winners</div>
                </div>
-               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 text-center border border-white/10 hover:bg-white/20 transition-colors">
-                  <div className="text-slate-300 mb-2 flex justify-center"><Medal size={28} /></div>
-                  <div className="text-3xl font-black mb-1">5</div>
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-slate-300">Runners-Up</div>
+               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 md:p-4 text-center border border-white/10 hover:bg-white/20 transition-colors">
+                  <div className="text-slate-300 mb-2 flex justify-center"><Medal size={24} className="md:w-7 md:h-7" /></div>
+                  <div className="text-2xl md:text-3xl font-black mb-1">5</div>
+                  <div className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-slate-300">Runners-Up</div>
                </div>
-               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-4 text-center border border-white/10 hover:bg-white/20 transition-colors">
-                  <div className="text-orange-400 mb-2 flex justify-center"><Star size={28} /></div>
-                  <div className="text-3xl font-black mb-1">22</div>
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-slate-300">Semi Finalist</div>
+               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 md:p-4 text-center border border-white/10 hover:bg-white/20 transition-colors">
+                  <div className="text-orange-400 mb-2 flex justify-center"><Star size={24} className="md:w-7 md:h-7" /></div>
+                  <div className="text-2xl md:text-3xl font-black mb-1">22</div>
+                  <div className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-slate-300">Semi Finalist</div>
                </div>
             </div>
         </div>
       </div>
 
       {/* 4. Latest Match Performers Carousel */}
-      <div className="space-y-4">
-         <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-               <Zap className="text-yellow-500 fill-yellow-500" /> Match Day Heroes
+      <div className="space-y-3 md:space-y-4">
+         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
+            <h3 className="text-lg md:text-xl font-bold text-slate-800 flex items-center gap-2">
+               <Zap className="text-yellow-500 fill-yellow-500" size={20} /> Match Day Heroes
             </h3>
             {lastCompletedMatch && (
               <span className="text-xs font-bold bg-blue-100 text-blue-700 px-3 py-1 rounded-full border border-blue-200">
@@ -253,27 +250,27 @@ const Dashboard: React.FC<DashboardProps> = ({ players, matches }) => {
          ) : (
            <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar snap-x">
               {latestMatchHeroes.map((player) => (
-                <div key={player.id} className="min-w-[220px] bg-white rounded-2xl p-4 border border-slate-100 shadow-sm snap-center hover:shadow-md transition-shadow">
+                <div key={player.id} className="min-w-[180px] md:min-w-[220px] bg-white rounded-2xl p-4 border border-slate-100 shadow-sm snap-center hover:shadow-md transition-shadow">
                    <div className="flex flex-col items-center text-center">
                       <div className="relative mb-3">
-                         <img src={player.avatarUrl} className="w-16 h-16 rounded-2xl object-cover shadow-md" />
-                         <div className="absolute -bottom-2 bg-slate-900 text-white text-[10px] font-bold px-2 py-0.5 rounded-full border-2 border-white">
+                         <img src={player.avatarUrl} className="w-14 h-14 md:w-16 md:h-16 rounded-2xl object-cover shadow-md" />
+                         <div className="absolute -bottom-2 bg-slate-900 text-white text-[9px] md:text-[10px] font-bold px-2 py-0.5 rounded-full border-2 border-white">
                            {player.role === 'Bowler' ? '2+ Wkts' : '40+ Runs'}
                          </div>
                       </div>
-                      <h4 className="font-bold text-slate-800">{player.name}</h4>
+                      <h4 className="font-bold text-slate-800 text-sm md:text-base">{player.name}</h4>
                       <p className="text-xs text-slate-500 mb-3">{player.role}</p>
                       
                       <div className="flex gap-2 w-full">
                          {player.role === 'Bowler' ? (
                             <div className="flex-1 bg-red-50 rounded-lg p-2">
-                               <p className="text-[10px] uppercase font-bold text-red-400">Figures</p>
-                               <p className="font-bold text-red-700">3/24</p>
+                               <p className="text-[9px] md:text-[10px] uppercase font-bold text-red-400">Figures</p>
+                               <p className="font-bold text-red-700 text-xs md:text-sm">3/24</p>
                             </div>
                          ) : (
                             <div className="flex-1 bg-green-50 rounded-lg p-2">
-                               <p className="text-[10px] uppercase font-bold text-green-400">Score</p>
-                               <p className="font-bold text-green-700">45(28)</p>
+                               <p className="text-[9px] md:text-[10px] uppercase font-bold text-green-400">Score</p>
+                               <p className="font-bold text-green-700 text-xs md:text-sm">45(28)</p>
                             </div>
                          )}
                       </div>
@@ -285,19 +282,19 @@ const Dashboard: React.FC<DashboardProps> = ({ players, matches }) => {
       </div>
 
       {/* 5. Tournament Group Table */}
-      <div className="bg-slate-900 rounded-3xl overflow-hidden shadow-2xl border border-slate-800 w-full">
-         <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-6 border-b border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+      <div className="bg-slate-900 rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl border border-slate-800 w-full">
+         <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-4 md:p-6 border-b border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
             <div>
-               <h3 className="text-white font-black text-xl flex items-center gap-2">
+               <h3 className="text-white font-black text-lg md:text-xl flex items-center gap-2">
                  <Hash className="text-blue-500" /> Points Table
                </h3>
                <div className="flex flex-wrap items-center gap-3 mt-4">
-                  <div>
+                  <div className="flex-1 min-w-[150px]">
                     <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">Tournament</label>
                     <input 
                       value={tournamentName} 
                       onChange={(e) => setTournamentName(e.target.value)}
-                      className="bg-slate-950 border border-slate-700 text-white text-sm font-bold px-3 py-1.5 rounded-lg w-full md:w-48 focus:ring-1 focus:ring-blue-500 outline-none"
+                      className="bg-slate-950 border border-slate-700 text-white text-sm font-bold px-3 py-1.5 rounded-lg w-full focus:ring-1 focus:ring-blue-500 outline-none"
                     />
                   </div>
                   <div>
@@ -312,7 +309,7 @@ const Dashboard: React.FC<DashboardProps> = ({ players, matches }) => {
             </div>
             <button 
               onClick={handleAddRow}
-              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 text-sm transition-colors"
+              className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-xl font-bold flex items-center gap-2 text-xs md:text-sm transition-colors w-full md:w-auto justify-center"
             >
               <Plus size={16} /> Add Team
             </button>

@@ -10,9 +10,10 @@ import MatchSelection from './components/MatchSelection';
 import FieldingMap from './components/FieldingMap';
 import OpponentTeams from './components/OpponentTeams';
 import Scorecard from './components/Scorecard';
+import Memories from './components/Memories';
 import SplashScreen from './components/SplashScreen';
 import { Player, Match, UserRole, OpponentTeam } from '../types';
-import { getPlayers, savePlayers, getMatches, saveMatches, getOpponents, saveOpponents } from '../services/storageService';
+import { getPlayers, savePlayers, getMatches, saveMatches, getOpponents, saveOpponents, getTeamLogo, saveTeamLogo } from '../services/storageService';
 import { Menu, BrainCircuit } from 'lucide-react';
 
 const AppContent: React.FC<{ 
@@ -27,8 +28,11 @@ const AppContent: React.FC<{
   onUpdateOpponent: (t: OpponentTeam) => void,
   onDeleteOpponent: (id: string) => void,
   onAddMatch: (m: Match) => void,
-  onSignOut: () => void
-}> = ({ players, matches, opponents, userRole, onAddPlayer, onUpdatePlayer, onDeletePlayer, onAddOpponent, onUpdateOpponent, onDeleteOpponent, onAddMatch, onSignOut }) => {
+  onUpdateMatch: (m: Match) => void,
+  onSignOut: () => void,
+  teamLogo: string,
+  onUpdateLogo: (url: string) => void
+}> = ({ players, matches, opponents, userRole, onAddPlayer, onUpdatePlayer, onDeletePlayer, onAddOpponent, onUpdateOpponent, onDeleteOpponent, onAddMatch, onUpdateMatch, onSignOut, teamLogo, onUpdateLogo }) => {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [showAICoach, setShowAICoach] = useState(false);
   const location = useLocation();
@@ -40,19 +44,21 @@ const AppContent: React.FC<{
         toggle={() => setSidebarOpen(!isSidebarOpen)} 
         userRole={userRole} 
         onSignOut={onSignOut}
+        teamLogo={teamLogo}
+        onUpdateLogo={onUpdateLogo}
       />
       
       <main className="flex-1 min-w-0 transition-all duration-300 relative h-screen overflow-y-auto">
-        <header className="md:hidden bg-white border-b border-slate-200 p-4 flex items-center justify-between sticky top-0 z-10">
+        <header className="md:hidden bg-white border-b border-slate-200 p-3 flex items-center justify-between sticky top-0 z-20">
           <h1 className="font-bold text-lg text-slate-800">Indian Strikers</h1>
-          <button onClick={() => setSidebarOpen(true)} className="text-slate-600">
-            <Menu />
+          <button onClick={() => setSidebarOpen(true)} className="text-slate-600 p-1">
+            <Menu size={24} />
           </button>
         </header>
 
-        <div className="p-4 md:p-8 max-w-7xl mx-auto pb-24">
+        <div className="p-3 md:p-6 lg:p-8 max-w-7xl mx-auto pb-24 md:pb-8">
           <Routes>
-            <Route path="/match-day" element={<Dashboard players={players} matches={matches} />} />
+            <Route path="/home" element={<Dashboard players={players} matches={matches} />} />
             <Route 
               path="/roster" 
               element={
@@ -72,11 +78,12 @@ const AppContent: React.FC<{
                   matches={matches} 
                   opponents={opponents}
                   onAddMatch={onAddMatch}
+                  onUpdateMatch={onUpdateMatch}
                   userRole={userRole}
                 />
               } 
             />
-            <Route path="/selection" element={<MatchSelection players={players} userRole={userRole} />} />
+            <Route path="/selection" element={<MatchSelection players={players} userRole={userRole} matches={matches} teamLogo={teamLogo} />} />
             <Route path="/fielding" element={<FieldingMap />} />
             <Route 
               path="/opponents" 
@@ -90,16 +97,17 @@ const AppContent: React.FC<{
                 />
               } 
             />
-            <Route path="/scorecard" element={<Scorecard />} />
-            <Route path="*" element={<Navigate to="/match-day" replace />} />
+            <Route path="/scorecard" element={<Scorecard opponents={opponents} players={players} matches={matches} />} />
+            <Route path="/memories" element={<Memories userRole={userRole} />} />
+            <Route path="*" element={<Navigate to="/home" replace />} />
           </Routes>
         </div>
 
         {/* AI Coach FAB */}
-        <div className="fixed bottom-6 right-6 z-40">
+        <div className="fixed bottom-4 right-4 z-40 md:bottom-8 md:right-8">
            <button 
              onClick={() => setShowAICoach(!showAICoach)}
-             className="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-lg shadow-blue-600/30 transition-all hover:scale-110 flex items-center justify-center"
+             className="bg-blue-600 hover:bg-blue-700 text-white p-3 md:p-4 rounded-full shadow-lg shadow-blue-600/30 transition-all hover:scale-110 flex items-center justify-center active:scale-95"
            >
              <BrainCircuit size={24} />
            </button>
@@ -130,12 +138,14 @@ const App: React.FC = () => {
   const [opponents, setOpponents] = useState<OpponentTeam[]>([]);
   const [showSplash, setShowSplash] = useState(true);
   const [userRole, setUserRole] = useState<UserRole>('guest');
+  const [teamLogo, setTeamLogo] = useState<string>('');
 
   useEffect(() => {
     // Load initial data
     setPlayers(getPlayers());
     setMatches(getMatches());
     setOpponents(getOpponents());
+    setTeamLogo(getTeamLogo());
     
     // Check if splash has been seen this session
     const hasSeenSplash = sessionStorage.getItem('hasSeenSplash');
@@ -210,8 +220,21 @@ const App: React.FC = () => {
     saveMatches(updated);
   };
 
+  const handleUpdateMatch = (updatedMatch: Match) => {
+    if (userRole !== 'admin') return;
+    const updated = matches.map(m => m.id === updatedMatch.id ? updatedMatch : m);
+    setMatches(updated);
+    saveMatches(updated);
+  };
+
+  const handleUpdateLogo = (url: string) => {
+    if (userRole !== 'admin') return;
+    setTeamLogo(url);
+    saveTeamLogo(url);
+  };
+
   if (showSplash) {
-    return <SplashScreen onComplete={handleLoginComplete} />;
+    return <SplashScreen onComplete={handleLoginComplete} teamLogo={teamLogo} />;
   }
 
   return (
@@ -228,7 +251,10 @@ const App: React.FC = () => {
         onUpdateOpponent={handleUpdateOpponent}
         onDeleteOpponent={handleDeleteOpponent}
         onAddMatch={handleAddMatch}
+        onUpdateMatch={handleUpdateMatch}
         onSignOut={handleSignOut}
+        teamLogo={teamLogo}
+        onUpdateLogo={handleUpdateLogo}
       />
     </HashRouter>
   );

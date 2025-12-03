@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Player, PlayerRole, UserRole, Match } from '../types';
 import { Trophy, AlertTriangle, Lock, ArrowRight, ArrowLeft, Share2, Loader2, Calendar, MapPin, Sword, Shield, CircleDot, UserX } from 'lucide-react';
@@ -138,19 +139,19 @@ const MatchSelection: React.FC<MatchSelectionProps> = ({ players, userRole, matc
   };
 
   return (
-    <div className="space-y-6 relative">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div className="space-y-4 md:space-y-6 relative h-full flex flex-col">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shrink-0">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Match Selection</h2>
-          <p className="text-slate-500">
-            {canEdit ? 'Click players to move them between squad and playing XI' : 'Confirmed Team Sheet'}
+          <p className="text-slate-500 text-sm">
+            {canEdit ? 'Click to select playing XI' : 'Confirmed Team Sheet'}
           </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 w-full md:w-auto">
            {/* Stats Badge */}
-           <div className="flex items-center gap-4 bg-white p-2 pr-6 rounded-xl shadow-sm border border-slate-100">
+           <div className="flex items-center gap-3 md:gap-4 bg-white p-2 pr-6 rounded-xl shadow-sm border border-slate-100 w-full md:w-auto">
               <div className={`
-                w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl
+                w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center font-bold text-lg md:text-xl shrink-0
                 ${selectedIds.size === 11 ? 'bg-green-100 text-green-600' : 'bg-blue-100 text-blue-600'}
               `}>
                 {selectedIds.size}
@@ -163,10 +164,10 @@ const MatchSelection: React.FC<MatchSelectionProps> = ({ players, userRole, matc
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-12 gap-6 h-[calc(100vh-14rem)]">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-6 min-h-0">
         {/* Left Column: Available Pool */}
-        <div className="lg:col-span-4 flex flex-col bg-slate-100 rounded-2xl p-4 border border-slate-200 overflow-hidden">
-          <h3 className="font-bold text-slate-500 uppercase text-xs mb-3 flex justify-between">
+        <div className="lg:col-span-4 flex flex-col bg-slate-100 rounded-2xl p-4 border border-slate-200 overflow-hidden h-[300px] lg:h-auto order-2 lg:order-1">
+          <h3 className="font-bold text-slate-500 uppercase text-xs mb-3 flex justify-between shrink-0">
             Available Squad <span>{availablePlayers.length}</span>
           </h3>
           <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
@@ -186,7 +187,7 @@ const MatchSelection: React.FC<MatchSelectionProps> = ({ players, userRole, matc
         </div>
 
         {/* Middle Column: Visualizer (Desktop) or Spacer */}
-        <div className="lg:col-span-4 lg:flex hidden flex-col justify-center items-center space-y-6">
+        <div className="lg:col-span-4 hidden lg:flex flex-col justify-center items-center space-y-6 order-2">
             <div className="bg-white p-6 rounded-2xl shadow-xl w-full border border-slate-100">
                 <h3 className="text-center font-bold text-slate-800 mb-6 flex items-center justify-center gap-2">
                    <Trophy size={18} className="text-yellow-500" /> Balance
@@ -266,8 +267,8 @@ const MatchSelection: React.FC<MatchSelectionProps> = ({ players, userRole, matc
         </div>
 
         {/* Right Column: Playing XI */}
-        <div className="lg:col-span-4 flex flex-col bg-white rounded-2xl p-4 border-2 border-blue-100 shadow-xl overflow-hidden">
-          <h3 className="font-bold text-blue-800 uppercase text-xs mb-3 flex justify-between">
+        <div className="lg:col-span-4 flex flex-col bg-white rounded-2xl p-4 border-2 border-blue-100 shadow-xl overflow-hidden h-[300px] lg:h-auto order-1 lg:order-3">
+          <h3 className="font-bold text-blue-800 uppercase text-xs mb-3 flex justify-between shrink-0">
             Playing XI <span>{selectedPlayers.length}/11</span>
           </h3>
           <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
@@ -291,7 +292,7 @@ const MatchSelection: React.FC<MatchSelectionProps> = ({ players, userRole, matc
         </div>
         
         {/* Mobile Stats Panel (Shown only on small screens) */}
-         <div className="lg:hidden col-span-full space-y-3">
+         <div className="lg:hidden col-span-full space-y-3 order-3">
             <button 
                 disabled={selectedIds.size !== 11 || !canEdit}
                 className={`w-full py-3 rounded-xl font-bold transition-all

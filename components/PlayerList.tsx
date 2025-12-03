@@ -109,17 +109,13 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
       // Auto-calculate derived stats
       if (isBatting) {
         const s = stats as BattingStats;
-        // Only calculate if the changed field is one of the inputs for calculation
         if (['runs', 'balls', 'innings', 'notOuts'].includes(field as string)) {
             const runs = Number(s.runs || 0);
             const balls = Number(s.balls || 0);
             const innings = Number(s.innings || 0);
             const notOuts = Number(s.notOuts || 0);
             
-            // Strike Rate
             s.strikeRate = balls > 0 ? parseFloat(((runs / balls) * 100).toFixed(2)) : 0;
-            
-            // Average
             const dismissals = innings - notOuts;
             s.average = dismissals > 0 ? parseFloat((runs / dismissals).toFixed(2)) : (runs > 0 ? runs : 0);
         }
@@ -130,16 +126,12 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
              const wickets = Number(s.wickets || 0);
              const overs = Number(s.overs || 0);
              
-             // True Overs from 10.2 format
              const wholeOvers = Math.floor(overs);
              const balls = Math.round((overs % 1) * 10);
              const totalBalls = (wholeOvers * 6) + balls;
              const trueOvers = totalBalls / 6;
 
-             // Economy
              s.economy = trueOvers > 0 ? parseFloat((runs / trueOvers).toFixed(2)) : 0;
-
-             // Average & Strike Rate
              if (wickets > 0) {
                  s.average = parseFloat((runs / wickets).toFixed(2));
                  s.strikeRate = parseFloat((totalBalls / wickets).toFixed(2));
@@ -233,7 +225,7 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Squad Roster</h2>
@@ -245,7 +237,7 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
           {canEdit && (
             <button 
               onClick={handleOpenAdd}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20 hover:scale-105"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 transition-all shadow-lg shadow-blue-600/20 hover:scale-105 w-full md:w-auto justify-center"
             >
               <Plus size={20} />
               Recruit Player
@@ -266,7 +258,7 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
         {filteredPlayers.map((player) => (
           <div 
             key={player.id} 
@@ -274,7 +266,7 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
             className="group relative bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-xl transition-all duration-300 cursor-pointer"
           >
             {/* Header / Background */}
-            <div className={`h-24 bg-gradient-to-r ${player.isAvailable ? 'from-slate-800 to-slate-900' : 'from-slate-200 to-slate-300'}`}>
+            <div className={`h-20 md:h-24 bg-gradient-to-r ${player.isAvailable ? 'from-slate-800 to-slate-900' : 'from-slate-200 to-slate-300'}`}>
               <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
                 {player.isCaptain && (
                   <span className="bg-yellow-400 text-yellow-900 text-[10px] font-black px-2 py-0.5 rounded shadow-sm tracking-wider">CPT</span>
@@ -302,22 +294,22 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
             </div>
 
             {/* Avatar */}
-            <div className="absolute top-10 left-6">
+            <div className="absolute top-8 md:top-10 left-6">
               <div className="relative">
                 <img 
                   src={player.avatarUrl} 
                   alt={player.name} 
-                  className={`w-20 h-20 rounded-2xl border-4 border-white object-cover shadow-md ${!player.isAvailable ? 'grayscale opacity-80' : ''}`}
+                  className={`w-16 h-16 md:w-20 md:h-20 rounded-2xl border-4 border-white object-cover shadow-md ${!player.isAvailable ? 'grayscale opacity-80' : ''}`}
                 />
-                <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white ${player.isAvailable ? 'bg-green-500' : 'bg-red-500'}`} title={player.isAvailable ? 'Available' : 'Unavailable'}></div>
+                <div className={`absolute -bottom-1 -right-1 w-4 h-4 md:w-5 md:h-5 rounded-full border-2 border-white ${player.isAvailable ? 'bg-green-500' : 'bg-red-500'}`} title={player.isAvailable ? 'Available' : 'Unavailable'}></div>
               </div>
             </div>
 
-            <div className="pt-10 p-6">
+            <div className="pt-8 md:pt-10 p-4 md:p-6">
               <div className="flex justify-between items-start mb-1">
-                <h3 className={`text-lg font-bold ${player.isAvailable ? 'text-slate-800' : 'text-slate-500'}`}>{player.name}</h3>
+                <h3 className={`text-base md:text-lg font-bold ${player.isAvailable ? 'text-slate-800' : 'text-slate-500'}`}>{player.name}</h3>
                 {canEdit && (
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex gap-1 md:opacity-0 group-hover:opacity-100 transition-opacity">
                     <button 
                       onClick={(e) => handleOpenEdit(player, e)}
                       className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
@@ -357,43 +349,43 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
       {/* Add/Edit Modal */}
       {isModalOpen && canEdit && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-white rounded-2xl w-full max-w-4xl overflow-hidden shadow-2xl max-h-[90vh] flex flex-col">
-            <div className="bg-slate-900 p-6 flex justify-between items-center shrink-0">
-              <h3 className="text-xl font-bold text-white flex items-center gap-2">
+          <div className="bg-white rounded-2xl w-full max-w-4xl overflow-hidden shadow-2xl max-h-[95vh] flex flex-col">
+            <div className="bg-slate-900 p-4 md:p-6 flex justify-between items-center shrink-0">
+              <h3 className="text-lg md:text-xl font-bold text-white flex items-center gap-2">
                 {editingPlayer ? <Edit2 size={20} className="text-blue-400" /> : <Plus size={20} className="text-blue-400" />}
                 {editingPlayer ? 'Edit Player Profile' : 'New Signing'}
               </h3>
               <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-white transition-colors"><X size={24} /></button>
             </div>
             
-            <div className="flex border-b border-slate-200">
+            <div className="flex border-b border-slate-200 overflow-x-auto">
                 <button 
                   onClick={() => setActiveEditTab('general')}
-                  className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${activeEditTab === 'general' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
+                  className={`flex-1 py-3 px-4 whitespace-nowrap text-sm font-bold border-b-2 transition-colors ${activeEditTab === 'general' ? 'border-blue-600 text-blue-600' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
                 >
                   General Info
                 </button>
                 <button 
                   onClick={() => setActiveEditTab('batting')}
-                  className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${activeEditTab === 'batting' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
+                  className={`flex-1 py-3 px-4 whitespace-nowrap text-sm font-bold border-b-2 transition-colors ${activeEditTab === 'batting' ? 'border-emerald-600 text-emerald-600' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
                 >
-                  Batting Statistics
+                  Batting Stats
                 </button>
                 <button 
                   onClick={() => setActiveEditTab('bowling')}
-                  className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${activeEditTab === 'bowling' ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
+                  className={`flex-1 py-3 px-4 whitespace-nowrap text-sm font-bold border-b-2 transition-colors ${activeEditTab === 'bowling' ? 'border-orange-600 text-orange-600' : 'border-transparent text-slate-500 hover:bg-slate-50'}`}
                 >
-                  Bowling Statistics
+                  Bowling Stats
                 </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="overflow-y-auto p-6 space-y-6 flex-1">
+            <form onSubmit={handleSubmit} className="overflow-y-auto p-4 md:p-6 space-y-4 md:space-y-6 flex-1">
               
               {activeEditTab === 'general' && (
                 <div className="space-y-6 animate-fade-in">
-                  <div className="flex items-center gap-6 pb-6 border-b border-slate-100">
+                  <div className="flex flex-col md:flex-row items-center gap-6 pb-6 border-b border-slate-100">
                     <div 
-                      className="relative w-24 h-24 rounded-full bg-slate-800 border-4 border-slate-700 shadow-inner flex items-center justify-center overflow-hidden cursor-pointer group"
+                      className="relative w-24 h-24 rounded-full bg-slate-800 border-4 border-slate-700 shadow-inner flex items-center justify-center overflow-hidden cursor-pointer group shrink-0"
                       onClick={() => fileInputRef.current?.click()}
                     >
                       {formData.avatarUrl ? (
@@ -412,7 +404,7 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
                         onChange={handleFileChange} 
                       />
                     </div>
-                    <div className="flex-1 space-y-4">
+                    <div className="flex-1 space-y-4 w-full">
                       <div>
                         <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Full Name</label>
                         <input 
@@ -471,7 +463,7 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
                            step={key === 'average' || key === 'strikeRate' ? '0.01' : '1'}
                            value={formData.battingStats ? (formData.battingStats as any)[key] : ''}
                            onChange={(e) => handleStatChange('batting', key as keyof BattingStats, e.target.value)}
-                           className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500"
+                           className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
                         />
                      </div>
                    ))}
@@ -488,7 +480,7 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
                            step={key === 'average' || key === 'economy' || key === 'strikeRate' ? '0.01' : '1'}
                            value={formData.bowlingStats ? (formData.bowlingStats as any)[key] : ''}
                            onChange={(e) => handleStatChange('bowling', key as keyof BowlingStats, e.target.value)}
-                           className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-orange-500"
+                           className="w-full p-2 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm"
                         />
                      </div>
                    ))}
@@ -503,7 +495,7 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
                       onClick={handleDeleteClick}
                       className="px-4 py-2.5 text-red-500 hover:bg-red-50 rounded-xl font-medium flex items-center gap-2"
                     >
-                      <Trash2 size={18} /> Delete Player
+                      <Trash2 size={18} /> <span className="hidden md:inline">Delete Player</span>
                     </button>
                    )}
                 </div>
@@ -555,7 +547,7 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
       {/* Player Profile Modal */}
       {viewingPlayer && (
          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in">
-           <div className="bg-white rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl relative max-h-[90vh] flex flex-col">
+           <div className="bg-white rounded-3xl w-full max-w-4xl overflow-hidden shadow-2xl relative max-h-[95vh] flex flex-col">
               <button 
                 onClick={() => setViewingPlayer(null)} 
                 className="absolute top-4 right-4 z-10 p-2 bg-black/20 hover:bg-black/40 rounded-full text-white backdrop-blur-md transition-colors"
@@ -564,43 +556,43 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
               </button>
 
               {/* Hero Section */}
-              <div className="relative h-48 bg-gradient-to-r from-slate-900 via-slate-800 to-blue-900 shrink-0">
+              <div className="relative h-40 md:h-48 bg-gradient-to-r from-slate-900 via-slate-800 to-blue-900 shrink-0">
                  <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px' }}></div>
-                 <div className="absolute -bottom-16 left-8">
+                 <div className="absolute -bottom-12 md:-bottom-16 left-6 md:left-8">
                     <img 
                       src={viewingPlayer.avatarUrl} 
                       alt={viewingPlayer.name} 
-                      className="w-32 h-32 rounded-2xl border-4 border-white shadow-xl object-cover bg-slate-200"
+                      className="w-24 h-24 md:w-32 md:h-32 rounded-2xl border-4 border-white shadow-xl object-cover bg-slate-200"
                     />
                  </div>
-                 <div className="absolute bottom-4 left-44 text-white">
-                    <h2 className="text-3xl font-black">{viewingPlayer.name}</h2>
-                    <div className="flex items-center gap-3 text-blue-200 mt-1">
+                 <div className="absolute bottom-4 left-32 md:left-44 text-white pr-4">
+                    <h2 className="text-2xl md:text-3xl font-black truncate">{viewingPlayer.name}</h2>
+                    <div className="flex flex-wrap items-center gap-2 md:gap-3 text-blue-200 mt-1 text-xs md:text-sm">
                       <span className="font-medium">{viewingPlayer.role}</span>
-                      <span className="w-1 h-1 bg-white/50 rounded-full"></span>
+                      <span className="w-1 h-1 bg-white/50 rounded-full hidden md:block"></span>
                       <span>{viewingPlayer.battingStyle}</span>
                     </div>
                  </div>
-                 <div className="absolute top-6 right-16 flex gap-2">
-                    {viewingPlayer.isCaptain && <div className="bg-yellow-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">CAPTAIN</div>}
-                    {viewingPlayer.isViceCaptain && <div className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg">VICE CAPTAIN</div>}
+                 <div className="absolute top-4 md:top-6 right-12 md:right-16 flex flex-col md:flex-row gap-2">
+                    {viewingPlayer.isCaptain && <div className="bg-yellow-500 text-white px-3 py-1 rounded-full text-[10px] md:text-xs font-bold shadow-lg text-center">CAPTAIN</div>}
+                    {viewingPlayer.isViceCaptain && <div className="bg-blue-500 text-white px-3 py-1 rounded-full text-[10px] md:text-xs font-bold shadow-lg text-center">VICE CAPTAIN</div>}
                  </div>
               </div>
 
               {/* Content */}
-              <div className="pt-20 p-8 flex-1 overflow-y-auto">
+              <div className="pt-16 md:pt-20 p-4 md:p-8 flex-1 overflow-y-auto">
                  {/* Detailed Stats Section */}
-                 <div className="mb-8">
-                     <div className="flex gap-4 mb-4">
+                 <div className="mb-6 md:mb-8">
+                     <div className="flex gap-2 md:gap-4 mb-4 overflow-x-auto pb-2">
                         <button 
                           onClick={() => setActiveStatTab('batting')}
-                          className={`px-6 py-2 rounded-full font-bold text-sm transition-all border ${activeStatTab === 'batting' ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-500/30' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
+                          className={`px-4 md:px-6 py-2 rounded-full font-bold text-xs md:text-sm transition-all border whitespace-nowrap ${activeStatTab === 'batting' ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-500/30' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
                         >
                           BATTING STATISTICS
                         </button>
                         <button 
                            onClick={() => setActiveStatTab('bowling')}
-                           className={`px-6 py-2 rounded-full font-bold text-sm transition-all border ${activeStatTab === 'bowling' ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-500/30' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
+                           className={`px-4 md:px-6 py-2 rounded-full font-bold text-xs md:text-sm transition-all border whitespace-nowrap ${activeStatTab === 'bowling' ? 'bg-emerald-600 text-white border-emerald-600 shadow-lg shadow-emerald-500/30' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}`}
                         >
                            BOWLING STATISTICS
                         </button>
@@ -609,74 +601,74 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
                      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                         <div className="overflow-x-auto">
                            {activeStatTab === 'batting' ? (
-                             <table className="w-full text-sm text-left">
+                             <table className="w-full text-xs md:text-sm text-left">
                                <thead className="bg-[#00703c] text-white font-bold text-xs uppercase">
                                  <tr>
-                                   <th className="p-3">Mat</th>
-                                   <th className="p-3">Inns</th>
-                                   <th className="p-3">NO</th>
-                                   <th className="p-3">Runs</th>
-                                   <th className="p-3">Balls</th>
-                                   <th className="p-3">Ave</th>
-                                   <th className="p-3">SR</th>
-                                   <th className="p-3">HS</th>
-                                   <th className="p-3">100's</th>
-                                   <th className="p-3">50's</th>
-                                   <th className="p-3">0's</th>
-                                   <th className="p-3">4's</th>
-                                   <th className="p-3">6's</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">Mat</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">Inns</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">NO</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">Runs</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">Balls</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">Ave</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">SR</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">HS</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">100's</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">50's</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">0's</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">4's</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">6's</th>
                                  </tr>
                                </thead>
                                <tbody>
                                  <tr className="border-b border-slate-100 hover:bg-slate-50 text-slate-700 font-medium">
-                                   <td className="p-3">{viewingPlayer.battingStats?.matches || '-'}</td>
-                                   <td className="p-3">{viewingPlayer.battingStats?.innings || '-'}</td>
-                                   <td className="p-3">{viewingPlayer.battingStats?.notOuts || '-'}</td>
-                                   <td className="p-3 font-bold">{viewingPlayer.battingStats?.runs || '-'}</td>
-                                   <td className="p-3">{viewingPlayer.battingStats?.balls || '-'}</td>
-                                   <td className="p-3">{viewingPlayer.battingStats?.average || '-'}</td>
-                                   <td className="p-3">{viewingPlayer.battingStats?.strikeRate || '-'}</td>
-                                   <td className="p-3">{viewingPlayer.battingStats?.highestScore || '-'}</td>
-                                   <td className="p-3">{viewingPlayer.battingStats?.hundreds || '-'}</td>
-                                   <td className="p-3">{viewingPlayer.battingStats?.fifties || '-'}</td>
-                                   <td className="p-3">{viewingPlayer.battingStats?.ducks || '-'}</td>
-                                   <td className="p-3">{viewingPlayer.battingStats?.fours || '-'}</td>
-                                   <td className="p-3">{viewingPlayer.battingStats?.sixes || '-'}</td>
+                                   <td className="p-2 md:p-3">{viewingPlayer.battingStats?.matches || '-'}</td>
+                                   <td className="p-2 md:p-3">{viewingPlayer.battingStats?.innings || '-'}</td>
+                                   <td className="p-2 md:p-3">{viewingPlayer.battingStats?.notOuts || '-'}</td>
+                                   <td className="p-2 md:p-3 font-bold">{viewingPlayer.battingStats?.runs || '-'}</td>
+                                   <td className="p-2 md:p-3">{viewingPlayer.battingStats?.balls || '-'}</td>
+                                   <td className="p-2 md:p-3">{viewingPlayer.battingStats?.average || '-'}</td>
+                                   <td className="p-2 md:p-3">{viewingPlayer.battingStats?.strikeRate || '-'}</td>
+                                   <td className="p-2 md:p-3">{viewingPlayer.battingStats?.highestScore || '-'}</td>
+                                   <td className="p-2 md:p-3">{viewingPlayer.battingStats?.hundreds || '-'}</td>
+                                   <td className="p-2 md:p-3">{viewingPlayer.battingStats?.fifties || '-'}</td>
+                                   <td className="p-2 md:p-3">{viewingPlayer.battingStats?.ducks || '-'}</td>
+                                   <td className="p-2 md:p-3">{viewingPlayer.battingStats?.fours || '-'}</td>
+                                   <td className="p-2 md:p-3">{viewingPlayer.battingStats?.sixes || '-'}</td>
                                  </tr>
                                </tbody>
                              </table>
                            ) : (
-                             <table className="w-full text-sm text-left">
+                             <table className="w-full text-xs md:text-sm text-left">
                                <thead className="bg-[#00703c] text-white font-bold text-xs uppercase">
                                  <tr>
-                                   <th className="p-3">Mat</th>
-                                   <th className="p-3">Inns</th>
-                                   <th className="p-3">Overs</th>
-                                   <th className="p-3">Mdns</th>
-                                   <th className="p-3">Runs</th>
-                                   <th className="p-3">Wkts</th>
-                                   <th className="p-3">Ave</th>
-                                   <th className="p-3">Econ</th>
-                                   <th className="p-3">SR</th>
-                                   <th className="p-3">BBI</th>
-                                   <th className="p-3">4W</th>
-                                   <th className="p-3">5W</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">Mat</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">Inns</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">Overs</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">Mdns</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">Runs</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">Wkts</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">Ave</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">Econ</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">SR</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">BBI</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">4W</th>
+                                   <th className="p-2 md:p-3 whitespace-nowrap">5W</th>
                                  </tr>
                                </thead>
                                <tbody>
                                  <tr className="border-b border-slate-100 hover:bg-slate-50 text-slate-700 font-medium">
-                                   <td className="p-3">{viewingPlayer.bowlingStats?.matches || '-'}</td>
-                                   <td className="p-3">{viewingPlayer.bowlingStats?.innings || '-'}</td>
-                                   <td className="p-3">{viewingPlayer.bowlingStats?.overs || '-'}</td>
-                                   <td className="p-3">{viewingPlayer.bowlingStats?.maidens || '-'}</td>
-                                   <td className="p-3">{viewingPlayer.bowlingStats?.runs || '-'}</td>
-                                   <td className="p-3 font-bold">{viewingPlayer.bowlingStats?.wickets || '-'}</td>
-                                   <td className="p-3">{viewingPlayer.bowlingStats?.average || '-'}</td>
-                                   <td className="p-3">{viewingPlayer.bowlingStats?.economy || '-'}</td>
-                                   <td className="p-3">{viewingPlayer.bowlingStats?.strikeRate || '-'}</td>
-                                   <td className="p-3">{viewingPlayer.bowlingStats?.bestBowling || '-'}</td>
-                                   <td className="p-3">{viewingPlayer.bowlingStats?.fourWickets || '-'}</td>
-                                   <td className="p-3">{viewingPlayer.bowlingStats?.fiveWickets || '-'}</td>
+                                   <td className="p-2 md:p-3">{viewingPlayer.bowlingStats?.matches || '-'}</td>
+                                   <td className="p-2 md:p-3">{viewingPlayer.bowlingStats?.innings || '-'}</td>
+                                   <td className="p-2 md:p-3">{viewingPlayer.bowlingStats?.overs || '-'}</td>
+                                   <td className="p-2 md:p-3">{viewingPlayer.bowlingStats?.maidens || '-'}</td>
+                                   <td className="p-2 md:p-3">{viewingPlayer.bowlingStats?.runs || '-'}</td>
+                                   <td className="p-2 md:p-3 font-bold">{viewingPlayer.bowlingStats?.wickets || '-'}</td>
+                                   <td className="p-2 md:p-3">{viewingPlayer.bowlingStats?.average || '-'}</td>
+                                   <td className="p-2 md:p-3">{viewingPlayer.bowlingStats?.economy || '-'}</td>
+                                   <td className="p-2 md:p-3">{viewingPlayer.bowlingStats?.strikeRate || '-'}</td>
+                                   <td className="p-2 md:p-3">{viewingPlayer.bowlingStats?.bestBowling || '-'}</td>
+                                   <td className="p-2 md:p-3">{viewingPlayer.bowlingStats?.fourWickets || '-'}</td>
+                                   <td className="p-2 md:p-3">{viewingPlayer.bowlingStats?.fiveWickets || '-'}</td>
                                  </tr>
                                </tbody>
                              </table>
@@ -686,11 +678,11 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
                  </div>
 
                  {/* Basic Info Block */}
-                 <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
+                 <div className="bg-slate-50 rounded-2xl p-4 md:p-6 border border-slate-100">
                      <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
                        <UserCheck className="text-blue-500" /> Additional Details
                      </h3>
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 text-sm">
                         <div className="flex justify-between py-2 border-b border-slate-200">
                            <span className="text-slate-500">Batting Style</span>
                            <span className="font-bold text-slate-900">{viewingPlayer.battingStyle}</span>
@@ -712,7 +704,7 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
                    <div className="mt-8 flex justify-end">
                      <button 
                        onClick={(e) => { handleOpenEdit(viewingPlayer, e); setViewingPlayer(null); }}
-                       className="px-6 py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition-colors flex items-center gap-2"
+                       className="w-full md:w-auto px-6 py-3 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl transition-colors flex items-center justify-center gap-2"
                      >
                        <Edit2 size={18} /> Edit Full Profile
                      </button>
