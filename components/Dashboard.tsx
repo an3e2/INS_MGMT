@@ -118,10 +118,89 @@ const Dashboard: React.FC<DashboardProps> = ({ players, matches }) => {
         <div className="h-1 w-16 md:w-24 bg-blue-600 mx-auto mt-2 md:mt-4 rounded-full"></div>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-4 md:gap-8">
-        
-        {/* 2. Top Stats (Side by Side) */}
-        <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg border border-slate-100 p-4 md:p-6 overflow-hidden relative">
+      {/* 2. Team Legacy & Match Heroes */}
+      <div className="grid lg:grid-cols-12 gap-4 md:gap-8">
+        {/* Team Achievements */}
+        <div className="lg:col-span-5 xl:col-span-4 bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl md:rounded-3xl shadow-xl p-6 md:p-8 text-white relative overflow-hidden flex flex-col justify-center min-h-[250px]">
+            <div className="absolute top-0 right-0 p-8 opacity-10"><Trophy size={180} /></div>
+            
+            <h3 className="text-xl md:text-2xl font-black mb-6 md:mb-8 relative z-10 flex items-center gap-3">
+              <Award className="text-yellow-400" /> Team Legacy
+            </h3>
+
+            <div className="grid grid-cols-3 gap-3 md:gap-4 relative z-10">
+               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 md:p-4 text-center border border-white/10 hover:bg-white/20 transition-colors">
+                  <div className="text-yellow-400 mb-2 flex justify-center"><Trophy size={24} className="md:w-7 md:h-7" /></div>
+                  <div className="text-2xl md:text-3xl font-black mb-1">7</div>
+                  <div className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-slate-300">Winners</div>
+               </div>
+               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 md:p-4 text-center border border-white/10 hover:bg-white/20 transition-colors">
+                  <div className="text-slate-300 mb-2 flex justify-center"><Medal size={24} className="md:w-7 md:h-7" /></div>
+                  <div className="text-2xl md:text-3xl font-black mb-1">5</div>
+                  <div className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-slate-300">Runners-Up</div>
+               </div>
+               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 md:p-4 text-center border border-white/10 hover:bg-white/20 transition-colors">
+                  <div className="text-orange-400 mb-2 flex justify-center"><Star size={24} className="md:w-7 md:h-7" /></div>
+                  <div className="text-2xl md:text-3xl font-black mb-1">22</div>
+                  <div className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-slate-300">Semi Finalist</div>
+               </div>
+            </div>
+        </div>
+
+        {/* Latest Match Performers Carousel */}
+        <div className="lg:col-span-7 xl:col-span-8 flex flex-col justify-center space-y-3 md:space-y-4">
+           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2 px-1">
+              <h3 className="text-lg md:text-xl font-bold text-slate-800 flex items-center gap-2">
+                 <Zap className="text-yellow-500 fill-yellow-500" size={20} /> Match Day Heroes
+              </h3>
+              {lastCompletedMatch && (
+                <span className="text-xs font-bold bg-blue-100 text-blue-700 px-3 py-1 rounded-full border border-blue-200">
+                  vs {lastCompletedMatch.opponent} ({new Date(lastCompletedMatch.date).toLocaleDateString()})
+                </span>
+              )}
+           </div>
+
+           {!lastCompletedMatch ? (
+             <div className="bg-slate-100 rounded-2xl p-8 text-center text-slate-400 font-medium border border-slate-200 h-full flex items-center justify-center">
+               No completed matches to show performers.
+             </div>
+           ) : (
+             <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar snap-x">
+                {latestMatchHeroes.map((player) => (
+                  <div key={player.id} className="min-w-[160px] md:min-w-[200px] bg-white rounded-2xl p-4 border border-slate-100 shadow-sm snap-center hover:shadow-md transition-shadow">
+                     <div className="flex flex-col items-center text-center">
+                        <div className="relative mb-3">
+                           <img src={player.avatarUrl} className="w-14 h-14 md:w-16 md:h-16 rounded-2xl object-cover shadow-md" />
+                           <div className="absolute -bottom-2 bg-slate-900 text-white text-[9px] md:text-[10px] font-bold px-2 py-0.5 rounded-full border-2 border-white">
+                             {player.role === 'Bowler' ? '2+ Wkts' : '40+ Runs'}
+                           </div>
+                        </div>
+                        <h4 className="font-bold text-slate-800 text-sm md:text-base">{player.name}</h4>
+                        <p className="text-xs text-slate-500 mb-3">{player.role}</p>
+                        
+                        <div className="flex gap-2 w-full">
+                           {player.role === 'Bowler' ? (
+                              <div className="flex-1 bg-red-50 rounded-lg p-2">
+                                 <p className="text-[9px] md:text-[10px] uppercase font-bold text-red-400">Figures</p>
+                                 <p className="font-bold text-red-700 text-xs md:text-sm">3/24</p>
+                              </div>
+                           ) : (
+                              <div className="flex-1 bg-green-50 rounded-lg p-2">
+                                 <p className="text-[9px] md:text-[10px] uppercase font-bold text-green-400">Score</p>
+                                 <p className="font-bold text-green-700 text-xs md:text-sm">45(28)</p>
+                              </div>
+                           )}
+                        </div>
+                     </div>
+                  </div>
+                ))}
+             </div>
+           )}
+        </div>
+      </div>
+      
+      {/* 3. Top Stats (Full Width) */}
+      <div className="bg-white rounded-2xl md:rounded-3xl shadow-lg border border-slate-100 p-4 md:p-6 overflow-hidden relative">
            <div className="absolute top-0 right-0 p-4 opacity-5"><Target size={120} /></div>
            
            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 md:mb-6 relative z-10 gap-3">
@@ -147,10 +226,10 @@ const Dashboard: React.FC<DashboardProps> = ({ players, matches }) => {
               </div>
            </div>
            
-           <div className="grid grid-cols-2 gap-4 md:gap-6 relative z-10">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12 relative z-10">
               {/* Batting */}
               <div className="space-y-3 md:space-y-4">
-                 <h4 className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                 <h4 className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1 border-b border-slate-100 pb-2 mb-2">
                    <Flame size={12} className="text-orange-500" /> Run Machines
                  </h4>
                  {topRunScorers.map((player, idx) => (
@@ -162,12 +241,12 @@ const Dashboard: React.FC<DashboardProps> = ({ players, matches }) => {
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                         <p className="text-xs font-bold text-slate-800 truncate">{player.name.split(' ')[0]}</p>
-                         <div className="flex items-center gap-2">
-                           <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden hidden sm:block">
-                              <div className="h-full bg-orange-500 rounded-full" style={{ width: `${(player.displayRuns / (topRunScorers[0]?.displayRuns || 1)) * 100}%` }}></div>
-                           </div>
-                           <span className="text-[10px] font-bold text-slate-500">{player.displayRuns}</span>
+                         <div className="flex justify-between items-center mb-1">
+                            <p className="text-xs font-bold text-slate-800 truncate">{player.name}</p>
+                            <span className="text-xs font-black text-slate-600">{player.displayRuns}</span>
+                         </div>
+                         <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden w-full">
+                            <div className="h-full bg-orange-500 rounded-full transition-all duration-1000" style={{ width: `${(player.displayRuns / (topRunScorers[0]?.displayRuns || 1)) * 100}%` }}></div>
                          </div>
                       </div>
                    </div>
@@ -175,8 +254,8 @@ const Dashboard: React.FC<DashboardProps> = ({ players, matches }) => {
               </div>
 
               {/* Bowling */}
-              <div className="space-y-3 md:space-y-4 border-l border-slate-100 pl-4 md:pl-6">
-                 <h4 className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1">
+              <div className="space-y-3 md:space-y-4 md:border-l border-slate-100 md:pl-8">
+                 <h4 className="text-[10px] md:text-xs font-black text-slate-400 uppercase tracking-widest flex items-center gap-1 border-b border-slate-100 pb-2 mb-2">
                    <Zap size={12} className="text-blue-500" /> Wicket Takers
                  </h4>
                  {topWicketTakers.map((player, idx) => (
@@ -188,100 +267,21 @@ const Dashboard: React.FC<DashboardProps> = ({ players, matches }) => {
                         </span>
                       </div>
                       <div className="flex-1 min-w-0">
-                         <p className="text-xs font-bold text-slate-800 truncate">{player.name.split(' ')[0]}</p>
-                         <div className="flex items-center gap-2">
-                           <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden hidden sm:block">
-                              <div className="h-full bg-blue-500 rounded-full" style={{ width: `${(player.displayWickets / (topWicketTakers[0]?.displayWickets || 1)) * 100}%` }}></div>
-                           </div>
-                           <span className="text-[10px] font-bold text-slate-500">{player.displayWickets}</span>
+                         <div className="flex justify-between items-center mb-1">
+                            <p className="text-xs font-bold text-slate-800 truncate">{player.name}</p>
+                            <span className="text-xs font-black text-slate-600">{player.displayWickets}</span>
+                         </div>
+                         <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden w-full">
+                            <div className="h-full bg-blue-500 rounded-full transition-all duration-1000" style={{ width: `${(player.displayWickets / (topWicketTakers[0]?.displayWickets || 1)) * 100}%` }}></div>
                          </div>
                       </div>
                    </div>
                  ))}
               </div>
            </div>
-        </div>
-
-        {/* 3. Team Achievements */}
-        <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl md:rounded-3xl shadow-xl p-6 md:p-8 text-white relative overflow-hidden flex flex-col justify-center">
-            <div className="absolute top-0 right-0 p-8 opacity-10"><Trophy size={180} /></div>
-            
-            <h3 className="text-xl md:text-2xl font-black mb-6 md:mb-8 relative z-10 flex items-center gap-3">
-              <Award className="text-yellow-400" /> Team Legacy
-            </h3>
-
-            <div className="grid grid-cols-3 gap-3 md:gap-4 relative z-10">
-               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 md:p-4 text-center border border-white/10 hover:bg-white/20 transition-colors">
-                  <div className="text-yellow-400 mb-2 flex justify-center"><Trophy size={24} className="md:w-7 md:h-7" /></div>
-                  <div className="text-2xl md:text-3xl font-black mb-1">7</div>
-                  <div className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-slate-300">Winners</div>
-               </div>
-               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 md:p-4 text-center border border-white/10 hover:bg-white/20 transition-colors">
-                  <div className="text-slate-300 mb-2 flex justify-center"><Medal size={24} className="md:w-7 md:h-7" /></div>
-                  <div className="text-2xl md:text-3xl font-black mb-1">5</div>
-                  <div className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-slate-300">Runners-Up</div>
-               </div>
-               <div className="bg-white/10 backdrop-blur-md rounded-2xl p-3 md:p-4 text-center border border-white/10 hover:bg-white/20 transition-colors">
-                  <div className="text-orange-400 mb-2 flex justify-center"><Star size={24} className="md:w-7 md:h-7" /></div>
-                  <div className="text-2xl md:text-3xl font-black mb-1">22</div>
-                  <div className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-slate-300">Semi Finalist</div>
-               </div>
-            </div>
-        </div>
       </div>
 
-      {/* 4. Latest Match Performers Carousel */}
-      <div className="space-y-3 md:space-y-4">
-         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
-            <h3 className="text-lg md:text-xl font-bold text-slate-800 flex items-center gap-2">
-               <Zap className="text-yellow-500 fill-yellow-500" size={20} /> Match Day Heroes
-            </h3>
-            {lastCompletedMatch && (
-              <span className="text-xs font-bold bg-blue-100 text-blue-700 px-3 py-1 rounded-full border border-blue-200">
-                vs {lastCompletedMatch.opponent} ({new Date(lastCompletedMatch.date).toLocaleDateString()})
-              </span>
-            )}
-         </div>
-
-         {!lastCompletedMatch ? (
-           <div className="bg-slate-100 rounded-2xl p-8 text-center text-slate-400 font-medium">
-             No completed matches to show performers.
-           </div>
-         ) : (
-           <div className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar snap-x">
-              {latestMatchHeroes.map((player) => (
-                <div key={player.id} className="min-w-[180px] md:min-w-[220px] bg-white rounded-2xl p-4 border border-slate-100 shadow-sm snap-center hover:shadow-md transition-shadow">
-                   <div className="flex flex-col items-center text-center">
-                      <div className="relative mb-3">
-                         <img src={player.avatarUrl} className="w-14 h-14 md:w-16 md:h-16 rounded-2xl object-cover shadow-md" />
-                         <div className="absolute -bottom-2 bg-slate-900 text-white text-[9px] md:text-[10px] font-bold px-2 py-0.5 rounded-full border-2 border-white">
-                           {player.role === 'Bowler' ? '2+ Wkts' : '40+ Runs'}
-                         </div>
-                      </div>
-                      <h4 className="font-bold text-slate-800 text-sm md:text-base">{player.name}</h4>
-                      <p className="text-xs text-slate-500 mb-3">{player.role}</p>
-                      
-                      <div className="flex gap-2 w-full">
-                         {player.role === 'Bowler' ? (
-                            <div className="flex-1 bg-red-50 rounded-lg p-2">
-                               <p className="text-[9px] md:text-[10px] uppercase font-bold text-red-400">Figures</p>
-                               <p className="font-bold text-red-700 text-xs md:text-sm">3/24</p>
-                            </div>
-                         ) : (
-                            <div className="flex-1 bg-green-50 rounded-lg p-2">
-                               <p className="text-[9px] md:text-[10px] uppercase font-bold text-green-400">Score</p>
-                               <p className="font-bold text-green-700 text-xs md:text-sm">45(28)</p>
-                            </div>
-                         )}
-                      </div>
-                   </div>
-                </div>
-              ))}
-           </div>
-         )}
-      </div>
-
-      {/* 5. Tournament Group Table */}
+      {/* 4. Tournament Group Table */}
       <div className="bg-slate-900 rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl border border-slate-800 w-full">
          <div className="bg-gradient-to-r from-slate-900 to-slate-800 p-4 md:p-6 border-b border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
             <div>
@@ -326,7 +326,7 @@ const Dashboard: React.FC<DashboardProps> = ({ players, matches }) => {
                      <th className="p-2 md:p-4 text-center">Lost</th>
                      <th className="p-2 md:p-4 text-center hidden sm:table-cell">N/R</th>
                      <th className="p-2 md:p-4 text-center text-yellow-300">Pts</th>
-                     <th className="p-2 md:p-4 text-center">Win %</th>
+                     <th className="p-2 md:p-4 text-center text-slate-300 font-mono text-[10px] md:text-xs">Win %</th>
                      <th className="p-2 md:p-4 text-center hidden sm:table-cell">Net RR</th>
                      <th className="p-2 md:p-4 w-8"></th>
                   </tr>

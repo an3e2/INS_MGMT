@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
@@ -13,7 +12,7 @@ import Scorecard from './components/Scorecard';
 import Memories from './components/Memories';
 import SplashScreen from './components/SplashScreen';
 import { Player, Match, UserRole, OpponentTeam } from '../types';
-import { getPlayers, savePlayers, getMatches, saveMatches, getOpponents, saveOpponents, getTeamLogo, saveTeamLogo } from '../services/storageService';
+import { getPlayers, savePlayers, getMatches, saveMatches, getOpponents, saveOpponents, getTeamLogo, saveTeamLogo } from './services/storageService';
 import { Menu, BrainCircuit } from 'lucide-react';
 
 const AppContent: React.FC<{ 
@@ -46,6 +45,7 @@ const AppContent: React.FC<{
         onSignOut={onSignOut}
         teamLogo={teamLogo}
         onUpdateLogo={onUpdateLogo}
+        matches={matches}
       />
       
       <main className="flex-1 min-w-0 transition-all duration-300 relative h-screen overflow-y-auto">
