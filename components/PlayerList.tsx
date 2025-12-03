@@ -99,13 +99,62 @@ const PlayerList: React.FC<PlayerListProps> = ({ players, userRole, onAddPlayer,
   };
 
   const handleStatChange = (type: 'batting' | 'bowling', field: keyof BattingStats | keyof BowlingStats, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [type === 'batting' ? 'battingStats' : 'bowlingStats']: {
-        ...(type === 'batting' ? prev.battingStats! : prev.bowlingStats!),
-        [field]: value
+    setFormData(prev => {
+      const isBatting = type === 'batting';
+      const stats = isBatting ? { ...prev.battingStats } : { ...prev.bowlingStats };
+      
+      // Update the modified field
+      (stats as any)[field] = value;
+
+      // Auto-calculate derived stats
+      if (isBatting) {
+        const s = stats as BattingStats;
+        // Only calculate if the changed field is one of the inputs for calculation
+        if (['runs', 'balls', 'innings', 'notOuts'].includes(field as string)) {
+            const runs = Number(s.runs || 0);
+            const balls = Number(s.balls || 0);
+            const innings = Number(s.innings || 0);
+            const notOuts = Number(s.notOuts || 0);
+            
+            // Strike Rate
+            s.strikeRate = balls > 0 ? parseFloat(((runs / balls) * 100).toFixed(2)) : 0;
+            
+            // Average
+            const dismissals = innings - notOuts;
+            s.average = dismissals > 0 ? parseFloat((runs / dismissals).toFixed(2)) : (runs > 0 ? runs : 0);
+        }
+      } else {
+        const s = stats as BowlingStats;
+        if (['runs', 'wickets', 'overs'].includes(field as string)) {
+             const runs = Number(s.runs || 0);
+             const wickets = Number(s.wickets || 0);
+             const overs = Number(s.overs || 0);
+             
+             // True Overs from 10.2 format
+             const wholeOvers = Math.floor(overs);
+             const balls = Math.round((overs % 1) * 10);
+             const totalBalls = (wholeOvers * 6) + balls;
+             const trueOvers = totalBalls / 6;
+
+             // Economy
+             s.economy = trueOvers > 0 ? parseFloat((runs / trueOvers).toFixed(2)) : 0;
+
+             // Average & Strike Rate
+             if (wickets > 0) {
+                 s.average = parseFloat((runs / wickets).toFixed(2));
+                 s.strikeRate = parseFloat((totalBalls / wickets).toFixed(2));
+             } else {
+                 s.average = 0;
+                 s.strikeRate = 0;
+             }
+        }
       }
-    }));
+
+      return {
+        ...prev,
+        [isBatting ? 'battingStats' : 'bowlingStats']: stats
+      };
+    });
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

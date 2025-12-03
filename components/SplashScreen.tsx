@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Shield, Users, Ticket, ArrowRight, Lock, Loader2, ChevronRight, X } from 'lucide-react';
 import { UserRole } from '../types';
@@ -266,7 +267,6 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, teamLogo = '' }
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-white capitalize">{selectedRole} Login</h3>
-                  <p className="text-sm text-slate-400">Enter your secure password</p>
                 </div>
               </div>
 
