@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Sidebar from './components/Sidebar';
@@ -14,6 +15,7 @@ import SplashScreen from './components/SplashScreen';
 import { Player, Match, UserRole, OpponentTeam } from '../types';
 import { getPlayers, savePlayers, getMatches, saveMatches, getOpponents, saveOpponents, getTeamLogo, saveTeamLogo } from './services/storageService';
 import { Menu, BrainCircuit } from 'lucide-react';
+import KirikINSLogo from './KirikINSLogo';
 
 const AppContent: React.FC<{ 
   players: Player[], 
@@ -49,9 +51,15 @@ const AppContent: React.FC<{
       />
       
       <main className="flex-1 min-w-0 transition-all duration-300 relative h-screen overflow-y-auto">
-        <header className="md:hidden bg-white border-b border-slate-200 p-3 flex items-center justify-between sticky top-0 z-20">
-          <h1 className="font-bold text-lg text-slate-800">Indian Strikers</h1>
-          <button onClick={() => setSidebarOpen(true)} className="text-slate-600 p-1">
+        <header className="md:hidden bg-slate-900 border-b border-slate-800 p-3 flex items-center justify-between sticky top-0 z-20">
+          <div className="flex items-center gap-2">
+            <KirikINSLogo size="small" className="scale-75 origin-left" />
+            <div className="h-4 w-px bg-slate-700 mx-1"></div>
+            <h1 className="font-bold text-sm tracking-wide">
+              <span className="text-white">INDIAN</span> <span className="text-[#4169E1]">STRIKERS</span>
+            </h1>
+          </div>
+          <button onClick={() => setSidebarOpen(true)} className="text-slate-400 p-1 hover:text-white">
             <Menu size={24} />
           </button>
         </header>

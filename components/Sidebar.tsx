@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   Users, 
@@ -8,19 +8,17 @@ import {
   ClipboardList, 
   Shield, 
   Swords, 
-  LayoutDashboard,
   X,
   User,
   Ticket,
   LogOut,
-  Upload,
   Home,
   Image,
-  MapPin,
   Clock,
-  Timer
+  Upload
 } from 'lucide-react';
 import { UserRole, Match } from '../types';
+import KirikINSLogo from './KirikINSLogo';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -36,6 +34,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, userRole = 'guest', o
   const [imgError, setImgError] = useState(false);
   const [nextMatch, setNextMatch] = useState<Match | null>(null);
   const [timeLeft, setTimeLeft] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Reset error state when prop changes
   useEffect(() => {
@@ -44,7 +43,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, userRole = 'guest', o
 
   // Next Match Logic
   useEffect(() => {
-    // Safety check for matches
     if (!matches || !Array.isArray(matches)) {
         setNextMatch(null);
         return;
@@ -70,8 +68,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, userRole = 'guest', o
       const diff = targetDate.getTime() - now.getTime();
 
       if (diff <= 0) {
-        // If match is today but time passed, or date passed
-        // Check if it's the same day at least
         if (targetDate.toDateString() === now.toDateString()) {
              return "Today!";
         }
@@ -86,17 +82,31 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, userRole = 'guest', o
       return `${hours}h ${minutes}m`;
     };
 
-    // Initial set
     setTimeLeft(calculateTimeLeft());
-
     const interval = setInterval(() => {
       setTimeLeft(calculateTimeLeft());
-    }, 60000); // Update every minute
+    }, 60000);
 
     return () => clearInterval(interval);
   }, [nextMatch]);
 
-  // Order: Home (Match Day), Squad Roster, Opponent Teams, Match Schedule, Match Selection, Fielding Map, Scorecard, Memories
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && userRole === 'admin') {
+      // Basic size check (approx 2MB limit for local storage safety)
+      if (file.size > 2 * 1024 * 1024) {
+          alert("Image is too large. Please upload a logo smaller than 2MB.");
+          return;
+      }
+
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        onUpdateLogo(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const links = [
     { to: '/home', icon: <Home size={20} />, label: 'Home' },
     { to: '/roster', icon: <Users size={20} />, label: 'Squad Roster' },
@@ -107,20 +117,6 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, userRole = 'guest', o
     { to: '/scorecard', icon: <Shield size={20} />, label: 'Scorecard' },
     { to: '/memories', icon: <Image size={20} />, label: 'Memories' },
   ];
-
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        onUpdateLogo(reader.result as string);
-        setImgError(false); // Reset error state on new upload
-      };
-      reader.readAsDataURL(file);
-      // Reset value so same file can be selected again
-      e.target.value = '';
-    }
-  };
 
   return (
     <>
@@ -138,39 +134,62 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, toggle, userRole = 'guest', o
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         md:translate-x-0 md:static md:h-screen flex flex-col
       `}>
-        <div className="p-6 flex items-center justify-between shrink-0">
-          <div className="flex items-center space-x-2">
-            <div className="relative group w-10 h-10 flex items-center justify-center">
-              {teamLogo && !imgError ? (
-                <img 
-                  src={teamLogo} 
-                  alt="Logo" 
-                  className="w-full h-full object-contain drop-shadow-lg" 
-                  onError={() => setImgError(true)}
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg shadow-lg">
-                  <Shield className="text-white w-6 h-6" />
-                </div>
-              )}
-              
-              {userRole === 'admin' && (
-                <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-lg z-10">
-                  <Upload size={16} className="text-white" />
-                  <input type="file" className="hidden" accept="image/*" onChange={handleLogoUpload} />
-                </label>
-              )}
-            </div>
-            <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-orange-400 to-white">
-              Indian Strikers
-            </h1>
+        <div className="p-5 flex flex-col gap-2 shrink-0 bg-slate-950/30">
+          <div className="flex items-center justify-between">
+             {/* Brand Logo - Top Corner */}
+             <div className="opacity-90 hover:opacity-100 transition-opacity">
+               <KirikINSLogo size="medium" />
+             </div>
+             <button onClick={toggle} className="md:hidden text-gray-400 hover:text-white">
+               <X size={24} />
+             </button>
           </div>
-          <button onClick={toggle} className="md:hidden text-gray-400 hover:text-white">
-            <X size={24} />
-          </button>
+
+          {/* Restored Team Name Section with Upload Capability */}
+          <div className="flex items-center space-x-3 pt-4 border-t border-slate-800/50 mt-2">
+             <div 
+               onClick={() => userRole === 'admin' && fileInputRef.current?.click()}
+               className={`
+                 w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-600/20 
+                 text-white overflow-hidden shrink-0 border border-blue-500/50 relative group
+                 ${userRole === 'admin' ? 'cursor-pointer hover:border-white transition-colors' : ''}
+               `}
+               title={userRole === 'admin' ? "Click to change logo" : ""}
+             >
+               {teamLogo && !imgError ? (
+                 <img 
+                   src={teamLogo} 
+                   onError={() => setImgError(true)}
+                   className="w-full h-full object-cover" 
+                   alt="Team Logo"
+                 />
+               ) : (
+                 <Shield size={20} />
+               )}
+
+               {/* Admin Upload Overlay */}
+               {userRole === 'admin' && (
+                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                   <Upload size={14} className="text-white" />
+                 </div>
+               )}
+               
+               <input 
+                 type="file" 
+                 ref={fileInputRef} 
+                 className="hidden" 
+                 accept="image/*" 
+                 onChange={handleLogoUpload} 
+               />
+             </div>
+             <span className="text-xl font-black tracking-tight leading-none" style={{ WebkitTextStroke: '0.5px white' }}>
+               <span className="text-white">INDIAN</span><br/>
+               <span className="text-[#4169E1]">STRIKERS</span>
+             </span>
+          </div>
         </div>
 
-        <nav className="mt-4 px-4 space-y-2 flex-1 overflow-y-auto custom-scrollbar">
+        <nav className="mt-2 px-4 space-y-2 flex-1 overflow-y-auto custom-scrollbar">
           {links.map((link) => (
             <NavLink
               key={link.to}
